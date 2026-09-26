@@ -1,78 +1,100 @@
 import os
+import base64
 import time
-import random
-import threading
-import sympy as sp
 from flask import Flask
+import sympy as sp
+import requests
 
-# 1. Initialize a tiny, lightweight web application framework for Render's port check scanner
 app = Flask(__name__)
+
+# GitHub Configuration (Uses environment variables for security)
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
+GITHUB_REPO = "getblall/Lumeni"
+FILE_PATH = "knowledge_base.txt"
+BRANCH = "main"
 
 @app.route('/')
 def home():
-    return "LUMENI ACTIVE: 24/7 High-Speed Mathematical Core Operational Core Online."
+    return "Lumeni Engine is fully operational and syncing on autopilot.", 200
 
-# 2. Package your infinite high-speed math engine loops into an independent background thread tracker
-def infinite_math_loop():
-    print("🚀 LUMENI STATUS: 24/7 High-Speed Mathematical Core Online.")
-    print("Streamlining calculation matrix loops... Standby.\n")
+def push_to_github(new_logs_list):
+    """Fetches knowledge_base.txt, appends new logs, and commits back to GitHub."""
+    if not GITHUB_TOKEN:
+        print("Sync aborted: GITHUB_TOKEN environment variable is missing.")
+        return False
+
+    url = f"https://github.com{GITHUB_REPO}/contents/{FILE_PATH}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+
+    # 1. Fetch current file to get its content and unique SHA blob
+    response = requests.get(url, headers=headers)
+    current_sha = None
+    current_content = ""
+
+    if response.status_code == 200:
+        file_data = response.json()
+        current_sha = file_data["sha"]
+        current_content = base64.b64decode(file_data["content"]).decode("utf-8")
+    elif response.status_code == 404:
+        print("knowledge_base.txt not found on GitHub. Creating a fresh file.")
+    else:
+        print(f"Failed to fetch from GitHub (Status {response.status_code}): {response.text}")
+        return False
+
+    # 2. Append the batch of new math calculations
+    log_string = "\n".join(new_logs_list)
+    updated_content = current_content + "\n" + log_string
+    encoded_content = base64.b64encode(updated_content.encode("utf-8")).decode("utf-8")
+
+    # 3. Commit changes back to the repository
+    payload = {
+        "message": f"🤖 Lumeni Sync: Batched {len(new_logs_list)} autonomous calculations",
+        "content": encoded_content,
+        "branch": BRANCH
+    }
+    if current_sha:
+        payload["sha"] = current_sha
+
+    put_response = requests.put(url, headers=headers, json=payload)
     
-    total_calculations = 0
-    math_modes = ["Calculus", "Matrix", "Algebraic_Balance"]
+    if put_response.status_code in:
+        print(f"Successfully synced {len(new_logs_list)} calculations to GitHub!")
+        return True
+    else:
+        print(f"Failed to commit to GitHub (Status {put_response.status_code}): {put_response.text}")
+        return False
 
-    try:
-        while True:
-            selected_mode = random.choice(math_modes)
-            total_calculations += 1
-            log_text = ""
-
-            if selected_mode == "Calculus":
+def lumeni_engine_loop():
+    """Infinite loop generating math logs and batch syncing them to GitHub."""
+    print("Lumeni SymPy Engine initiated...")
+    while True:
+        batch_logs = []
+        
+        # Run a burst cycle to collect ~15 clean calculations
+        for _ in range(15):
+            try:
+                # --- Example SymPy Logic (Replace with your exact math generation) ---
                 x = sp.Symbol('x')
-                power, coeff, constant = random.randint(2, 5), random.randint(2, 9), random.randint(1, 15)
-                expression = coeff * x**power + constant
-                derivative = sp.diff(expression, x)
-                integral = sp.integrate(expression, x)
+                expr = x**2 + 3*x + 2
+                diff_expr = sp.diff(expr, x)
+                log_entry = f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] f(x)={expr} | f'(x)={diff_expr}"
+                # --------------------------------------------------------------------
                 
-                log_text = f"🧪 Calculus Log | Target: f(x) = {expression}\n"
-                log_text += f"  -> Derivative: f'(x) = {derivative}\n  -> Integral: ∫ = {integral} + C"
+                batch_logs.append(log_entry)
+                time.sleep(5)  # Pace calculations during the active window
+            except Exception as e:
+                print(f"Engine Error: {e}")
 
-            elif selected_mode == "Matrix":
-                a, b, c, d = random.randint(1, 5), random.randint(1, 5), random.randint(1, 5), random.randint(1, 5)
-                matrix = sp.Matrix([[a, b], [c, d]])
-                det = matrix.det()
-                try:
-                    inv = matrix.inv()
-                    inv_text = str(inv)
-                except Exception:
-                    inv_text = "Singular Matrix (No Inverse)"
-                    
-                log_text = f"📊 Matrix Log | Target Array M: [[{a}, {b}], [{c}, {d}]]\n"
-                log_text += f"  -> Determinant: {det}\n  -> Inverse: {inv_text}"
-
-            else:
-                x = sp.Symbol('x')
-                a, b, c, d = random.randint(1, 5), random.randint(1, 5), random.randint(1, 5), random.randint(1, 5)
-                factored_expr = (a*x + b) * (c*x + d)
-                expanded_expr = sp.expand(factored_expr)
-                
-                log_text = f"📐 Algebra Log | Target: ({a}x + {b})({c}x + {d})\n"
-                log_text += f"  -> FOIL Expanded Polynomial Expression: {expanded_expr} = 0"
-
-            # Print explicitly to Render terminal console stream logs
-            print(f"[ENTRY #{total_calculations} | {time.strftime('%H:%M:%S')}]", flush=True)
-            print(log_text, flush=True)
-            print("-" * 60, flush=True)
+        # Sync the entire batch to GitHub before the container enters sleep mode
+        if batch_logs:
+            push_to_github(batch_logs)
             
-            time.sleep(5)
-    except Exception as e:
-        print(f"Loop error: {str(e)}", flush=True)
+        # Optional: rest window to cooperate with Render's free tier lifecycle
+        print("Window completed. Pausing engine...")
+        time.sleep(60)
 
-if __name__ == "__main__":
-    # Start your infinite math loops on its own thread channel so it never stalls out the system
-    threading.Thread(target=infinite_math_loop, daemon=True).start()
-    
-    # Grab the port number Render assigned to our free account automatically
-    port = int(os.environ.get("PORT", 10000))
-    
-    # Start web channel listener interface framework block
-    app.run(host="0.0.0.0", port=port)
+# Start your background engine thread here if required by your Flask setup
+# (Alternatively, run the loop directly depending on how you structured your background worker)
