@@ -1,6 +1,7 @@
 import os
 import base64
 import time
+import threading
 from flask import Flask
 import sympy as sp
 import requests
@@ -58,7 +59,7 @@ def push_to_github(new_logs_list):
     if current_sha:
         payload["sha"] = current_sha
 
-       put_response = requests.put(url, headers=headers, json=payload)
+    put_response = requests.put(url, headers=headers, json=payload)
     
     # GitHub returns 200 (OK) or 201 (Created) on successful file updates
     if put_response.status_code in:
@@ -77,12 +78,12 @@ def lumeni_engine_loop():
         # Run a burst cycle to collect ~15 clean calculations
         for _ in range(15):
             try:
-                # --- Example SymPy Logic (Replace with your exact math generation) ---
+                # --- Advanced Math Generation via SymPy ---
                 x = sp.Symbol('x')
                 expr = x**2 + 3*x + 2
                 diff_expr = sp.diff(expr, x)
                 log_entry = f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] f(x)={expr} | f'(x)={diff_expr}"
-                # --------------------------------------------------------------------
+                # -------------------------------------------
                 
                 batch_logs.append(log_entry)
                 time.sleep(5)  # Pace calculations during the active window
@@ -97,5 +98,12 @@ def lumeni_engine_loop():
         print("Window completed. Pausing engine...")
         time.sleep(60)
 
-# Start your background engine thread here if required by your Flask setup
-# (Alternatively, run the loop directly depending on how you structured your background worker)
+# Start the math engine loop in a separate background thread
+# This ensures that the Flask web server remains responsive to Render's port checker
+engine_thread = threading.Thread(target=lumeni_engine_loop, daemon=True)
+engine_thread.start()
+
+if __name__ == '__main__':
+    # Render sets the PORT environment variable dynamically
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
