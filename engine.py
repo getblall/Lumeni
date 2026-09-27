@@ -1,16 +1,12 @@
-# PROD_BUILD_V8: Fixed matrix choice array sequencing and optimized header fallback vectors
+\# PROD_BUILD_V9: Re-engineered connection using OS system level curl pipelines
 import os
 import sys
 import subprocess
 import random
-
-# Dynamically force-install missing core dependencies inside the runner environment
-try:
-    import requests
-except ImportError:
-    print("Core dependency 'requests' missing. Installing automatically...")
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
-    import requests
+import json
+import base64
+import time
+import threading
 
 try:
     import sympy as sp
@@ -18,10 +14,6 @@ except ImportError:
     print("Core dependency 'sympy' missing. Installing automatically...")
     subprocess.check_call([sys.executable, "-m", "pip", "install", "sympy"])
     import sympy as sp
-
-import base64
-import time
-import threading
 
 # Dynamically handle Flask (Only required on Render, completely optional for GitHub Actions)
 try:
@@ -40,86 +32,89 @@ if HAS_FLASK:
         return "Lumeni Engine is fully operational and syncing on autopilot.", 200
 
 # GitHub Configuration
-GITHUB_TOKEN = (
-    os.environ.get("GITHUB_TOKEN") or 
-    os.environ.get("INPUT_GITHUB_TOKEN") or 
-    os.environ.get("ACTIONS_RUNTIME_TOKEN")
-)
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 BRANCH = "main"
-
-# Detect if the environment is a GitHub Actions runner
 IS_GITHUB_ACTION = os.environ.get("GITHUB_ACTIONS") == "true"
 
 def push_to_github(new_logs_list):
-    """Fetches knowledge_base.txt, appends new logs, and commits back to GitHub."""
-    global GITHUB_TOKEN
-    
+    """Fetches and updates knowledge_base.txt using native OS curl commands to completely bypass 406 blocks."""
     if not GITHUB_TOKEN:
-        print("❌ Sync aborted: GITHUB_TOKEN environment variable is completely empty/missing.")
+        print("❌ Sync aborted: GITHUB_TOKEN environment variable is missing.")
         return False
 
-    target_api_url = "https://github.com"
+    target_url = "https://github.com"
+    print(f"🔄 Processing file sync operations using OS curl pipeline layout...")
+
+    # Step 1: Use a clean curl command line string execution block to get the current file and SHA
+    cmd_get = [
+        "curl", "-s", "-X", "GET", target_url,
+        "-H", f"Authorization: token {GITHUB_TOKEN}",
+        "-H", "Accept: application/vnd.github.v3+json",
+        "-H", "User-Agent: LumeniCoreEngine"
+    ]
     
-    # Standardized headers with clean tracking tokens
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "User-Agent": "LumeniMathEngine-v8.0",
-        "Accept": "application/vnd.github.v3+json"
-    }
-
     try:
-        # 1. Fetch current file to get its content and unique SHA blob
-        response = requests.get(target_api_url, headers=headers)
-        
-        # Automatic 406 token validation fallback loop
-        if response.status_code == 406:
-            print("🔄 Status 406 encountered. Retrying with Bearer header schema token mapping...")
-            headers["Authorization"] = f"Bearer {GITHUB_TOKEN}"
-            response = requests.get(target_api_url, headers=headers)
-
+        result_get = subprocess.run(cmd_get, capture_output=True, text=True, check=True)
         current_sha = None
         current_content = ""
 
-        if response.status_code == 200:
-            file_data = response.json()
-            current_sha = file_data["sha"]
-            current_content = base64.b64decode(file_data["content"]).decode("utf-8")
-            print("📂 Found existing knowledge_base.txt file. Appending records...")
-        elif response.status_code == 404:
-            print("📝 Initializing a fresh target file.")
-        else:
-            print(f"❌ Failed to fetch from GitHub (Status {response.status_code}): {response.text}")
-            return False
+        if result_get.stdout:
+            data = json.loads(result_get.stdout)
+            if "sha" in data:
+                current_sha = data["sha"]
+                current_content = base64.b64decode(data["content"]).decode("utf-8")
+                print("📂 Found existing knowledge_base.txt file via curl.")
+            elif "message" in data and data["message"] == "Not Found":
+                print("📝 knowledge_base.txt not found on GitHub. Starting a fresh file build.")
+            else:
+                print(f"⚠️ Unexpected gateway response configuration: {result_get.stdout}")
+    except Exception as err:
+        print(f"📝 Proceeding with new file tracking structure layout ({err})")
+        current_sha = None
+        current_content = ""
 
-        # 2. Append the batch of new math calculations
-        log_string = "\n".join(new_logs_list)
-        updated_content = current_content + "\n" + log_string if current_content else log_string
-        
-        encoded_content_str = base64.b64encode(updated_content.encode("utf-8")).decode("utf-8")
+    # Step 2: Append the batch of new math calculations
+    log_string = "\n".join(new_logs_list)
+    updated_content = current_content + "\n" + log_string if current_content else log_string
+    encoded_content_str = base64.b64encode(updated_content.encode("utf-8")).decode("utf-8")
 
-        # 3. Commit changes back to the repository
-        payload = {
-            "message": "🤖 Lumeni Sync: Batched autonomous calculations",
-            "content": encoded_content_str,
-            "branch": BRANCH
-        }
-        if current_sha:
-            payload["sha"] = current_sha
+    # Step 3: Write payload data parameters to a temporary hidden directory file to avoid CLI space injection
+    payload = {
+        "message": "🤖 Lumeni Sync: Batched autonomous calculations",
+        "content": encoded_content_str,
+        "branch": BRANCH
+    }
+    if current_sha:
+        payload["sha"] = current_sha
 
-        put_response = requests.put(target_api_url, headers=headers, json=payload)
-        
-        is_success_200 = bool(put_response.status_code == 200)
-        is_success_201 = bool(put_response.status_code == 201)
-        
-        if is_success_200 or is_success_201:
-            print(f"✅ Successfully synced {len(new_logs_list)} calculations to GitHub knowledge base!")
-            return True
-        else:
-            print(f"❌ Failed to commit to GitHub (Status {put_response.status_code}): {put_response.text}")
-            return False
-            
-    except requests.exceptions.RequestException as req_err:
-        print(f"❌ Network Transaction Exception encountered: {req_err}")
+    with open("payload.json", "w") as f:
+        json.dump(payload, f)
+
+    # Step 4: Execute the PUT file sync write block via raw curl pointing to the payload file
+    cmd_put = [
+        "curl", "-s", "-X", "PUT", target_url,
+        "-H", f"Authorization: token {GITHUB_TOKEN}",
+        "-H", "Accept: application/vnd.github.v3+json",
+        "-H", "User-Agent: LumeniCoreEngine",
+        "-H", "Content-Type: application/json",
+        "-d", "@payload.json"
+    ]
+
+    try:
+        result_put = subprocess.run(cmd_put, capture_output=True, text=True, check=True)
+        if result_put.stdout:
+            put_data = json.loads(result_put.stdout)
+            if "content" in put_data:
+                print("✅ Successfully synced calculations directly to GitHub knowledge base via curl pipeline!")
+                # Clean up temporary data file securely
+                if os.path.exists("payload.json"):
+                    os.remove("payload.json")
+                return True
+            else:
+                print(f"❌ Gateway transaction rejected: {result_put.stdout}")
+                return False
+    except Exception as put_err:
+        print(f"❌ OS pipeline connection transaction failed: {put_err}")
         return False
 
 def generate_autonomous_math():
@@ -148,7 +143,6 @@ def generate_autonomous_math():
 
     elif category == "matrix":
         operation = random.choice(["determinant", "inverse", "eigenvalues"])
-        # FIXED SELECTION ARRAY DIMENSIONS (2x2 or 3x3 matrices)
         size = random.choice([2, 3])
         matrix_data = [[random.randint(-5, 5) for _ in range(size)] for _ in range(size)]
         M = sp.Matrix(matrix_data)
