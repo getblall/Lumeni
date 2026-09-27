@@ -1,4 +1,4 @@
-# PROD_BUILD_V7: Fully normalized Bearer auth vectors for absolute API conformity
+# PROD_BUILD_FINAL: Standardized calculations with robust exception mapping
 import os
 import sys
 import subprocess
@@ -60,10 +60,9 @@ def push_to_github(new_logs_list):
 
     target_api_url = "https://github.com"
     
-    # FIXED AUTHORIZATION VECTOR: Switched completely to Bearer token format to satisfy GitHub API rules
     headers = {
         "Authorization": f"Bearer {GITHUB_TOKEN}",
-        "User-Agent": "LumeniMathEngine-v7.0",
+        "User-Agent": "LumeniMathEngine-FINAL",
         "Accept": "application/vnd.github.v3+json"
     }
 
@@ -140,14 +139,15 @@ def generate_autonomous_math():
 
     elif category == "matrix":
         operation = random.choice(["determinant", "inverse", "eigenvalues"])
-        size = random.choice([2, 3])
+        size = random.choice()
         matrix_data = [[random.randint(-5, 5) for _ in range(size)] for _ in range(size)]
         M = sp.Matrix(matrix_data)
         
         if operation == "determinant":
             return f"[MATRIX - DET] det({matrix_data}) = {M.det()}"
         elif operation == "inverse" and M.det() != 0:
-            return f"[MATRIX - INV] inv({matrix_data}) = M.inv().tolist()"
+            # FIXED LINE: Executed evaluation function wrapper cleanly to map list structures
+            return f"[MATRIX - INV] inv({matrix_data}) = {M.inv().tolist()}"
         else:
             return f"[MATRIX - EIGEN] eigenvalues({matrix_data}) = {M.eigenvals()}"
 
