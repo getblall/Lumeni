@@ -1,8 +1,10 @@
-# PROD_BUILD_AUTOPILOT_FINAL_V15: Using native credential helper configurations to bypass all URL variables
+# PROD_BUILD_AUTOPILOT_FINAL_V16: Standardized Python HTTP payload sync channel
 import os
 import sys
 import subprocess
 import random
+import json
+import base64
 import time
 import threading
 
@@ -13,6 +15,13 @@ except ImportError:
     print("Core dependency 'sympy' missing. Installing automatically...")
     subprocess.check_call([sys.executable, "-m", "pip", "install", "sympy"])
     import sympy as sp
+
+try:
+    import requests
+except ImportError:
+    print("Core dependency 'requests' missing. Installing automatically...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
+    import requests
 
 try:
     from flask import Flask
@@ -32,66 +41,72 @@ if HAS_FLASK:
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 FILE_PATH = "knowledge_base.txt"
 
-def push_to_github_via_git(new_logs_list):
-    """Appends logs locally and uses native Git configurations to handle tokens safely without dynamic strings."""
+def push_to_github_via_api(new_logs_list):
+    """Updates knowledge_base.txt directly using Python HTTP handshakes, avoiding Render's broken terminal Git settings."""
     global GITHUB_TOKEN
     if not GITHUB_TOKEN:
         print("❌ BACKGROUND SYNC ERROR: GITHUB_TOKEN environment variable is completely empty or missing on Render!")
         return False
 
-    print(f"🔄 BACKGROUND WORKER: Initializing native Git tree synchronization sequence for {len(new_logs_list)} items...")
+    print(f"🔄 BACKGROUND WORKER: Initializing HTTP payload synchronization for {len(new_logs_list)} items...")
     
+    # Static API endpoint link
+    target_api_url = "https://github.com"
+    
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json",
+        "User-Agent": "LumeniCoreEngineApp-v16.0"
+    }
+
     try:
-        # 1. Append the batch of math calculations to the local file
-        log_string = "\n".join(new_logs_list) + "\n"
-        with open(FILE_PATH, "a", encoding="utf-8") as f:
-            f.write(log_string)
-        print("📂 BACKGROUND WORKER: Appended calculations to local tracking container.")
+        # Step 1: Read the existing file content to grab its unique SHA code
+        response = requests.get(target_api_url, headers=headers)
+        current_sha = None
+        current_content = ""
 
-        # 2. Configure Git identification parameters to prevent commit blocking flags
-        subprocess.run(["git", "config", "user.name", "Lumeni Engine Bot"], check=True, capture_output=True)
-        subprocess.run(["git", "config", "user.email", "lumeni-bot@onrender.com"], check=True, capture_output=True)
+        if response.status_code == 200:
+            file_data = response.json()
+            current_sha = file_data.get("sha")
+            current_content = base64.b64decode(file_data.get("content", "")).decode("utf-8")
+            print("📂 Located existing tracking database file on GitHub.")
+        elif response.status_code == 404:
+            print("📝 Target file not found. Initializing a fresh knowledge container.")
+        else:
+            print(f"❌ Failed to reach GitHub gateway (Status {response.status_code}): {response.text}")
+            return False
 
-        # 3. Stage the modified knowledge base file
-        subprocess.run(["git", "add", FILE_PATH], check=True, capture_output=True)
+        # Step 2: Append your brand-new advanced math calculations
+        log_string = "\n".join(new_logs_list)
+        if current_content:
+            updated_content = current_content + "\n" + log_string
+        else:
+            updated_content = log_string
+            
+        encoded_content_str = base64.b64encode(updated_content.encode("utf-8")).decode("utf-8")
 
-        # 4. Commit the changes locally
-        commit_msg = f"🤖 Lumeni Sync: Batched {len(new_logs_list)} autonomous calculations"
-        subprocess.run(["git", "commit", "-m", commit_msg], check=True, capture_output=True)
+        # Step 3: Package payload parameters into a clean dictionary map
+        payload = {
+            "message": "🤖 Lumeni Sync: Batched autonomous calculations",
+            "content": encoded_content_str,
+            "branch": "main"
+        }
+        if current_sha:
+            payload["sha"] = current_sha
 
-        # 5. ABSOLUTE FIXED GIT AUTHENTICATION VECTOR:
-        # No variables, no formatting, no f-strings inside the push command.
-        # This pipes your token directly through a standard Git secure helper shell interface.
-        clean_token = str(GITHUB_TOKEN).strip()
+        # Step 4: Dispatch mutated updates straight to the repository branch endpoint
+        put_response = requests.put(target_api_url, headers=headers, json=payload)
         
-        # Tell Git to dynamically echo back the token password whenever the terminal requests it
-        subprocess.run([
-            "git", "config", "credential.helper", 
-            f"!f() {{ echo username=oauth2; echo password={clean_token}; }}; f"
-        ], check=True)
-
-        # Execute push targeting a completely static, un-scrubbable repository path destination
-        result_push = subprocess.run(
-            ["git", "push", "https://github.com", "HEAD:main"], 
-            capture_output=True, 
-            text=True
-        )
-
-        # Unset the helper immediately after push execution completes for absolute safety
-        subprocess.run(["git", "config", "--unset", "credential.helper"])
-
-        if result_push.returncode == 0:
+        if put_response.status_code == 200 or put_response.status_code == 201:
             print("✅ BACKGROUND WORKER SUCCESS: SUCCESSFULLY SYNCED BATCH GENERATIONS TO GITHUB ON AUTOPILOT!")
             return True
         else:
-            print(f"❌ BACKGROUND SYNC REJECTED BY GITHUB: {result_push.stderr}")
+            print(f"❌ Gateway transaction rejected with Code {put_response.status_code}")
+            print(f"ℹ️ Gateway Server Details: {put_response.text}")
             return False
 
-    except subprocess.CalledProcessError as git_err:
-        print(f"❌ BACKGROUND GIT PROCESS ERROR: {git_err.stderr}")
-        return False
     except Exception as e:
-        print(f"❌ BACKGROUND UNEXPECTED FAULT: {e}")
+        print(f"❌ Critical connection framework transaction fault encountered: {e}")
         return False
 
 def generate_autonomous_math():
@@ -166,7 +181,7 @@ def lumeni_engine_loop():
 
         # Sync the entire batch to GitHub
         if batch_logs:
-            push_to_github_via_git(batch_logs)
+            push_to_github_via_api(batch_logs)
         else:
             print("⚠️ Sync skipped: No clean calculations were generated.")
             
