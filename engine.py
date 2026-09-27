@@ -1,4 +1,4 @@
-# PROD_BUILD_AUTOPILOT_FINAL_V20: Absolute fallback parameters to force-create missing files
+# PROD_BUILD_AUTOPILOT_FINAL_V21: Stripped branch parameter from new file initialization payload to bypass 404 blocks
 import os
 import sys
 import subprocess
@@ -56,7 +56,7 @@ def push_to_github_via_api(new_logs_list):
     headers = {
         "Authorization": f"token {clean_token}",
         "Accept": "application/vnd.github.v3+json",
-        "User-Agent": "LumeniCoreEngineApp-v20.0",
+        "User-Agent": "LumeniCoreEngineApp-v21.0",
         "Content-Type": "application/json"
     }
 
@@ -90,17 +90,19 @@ def push_to_github_via_api(new_logs_list):
         encoded_content_str = base64.b64encode(updated_content.encode("utf-8")).decode("utf-8")
 
         # Step 3: Package payload parameters into a clean dictionary map
+        # FIXED: Removed the explicit branch parameter for newly initialized target files to avoid routing errors
         payload = {
             "message": "🤖 Lumeni Sync: Batched autonomous calculations",
-            "content": encoded_content_str,
-            "branch": "main"
+            "content": encoded_content_str
         }
         
-        # Only inject the SHA parameter if the file already exists on GitHub
-        if not is_new_file and current_sha is not None:
-            payload["sha"] = current_sha
+        # Only inject the branch and sha tracking parameter if the file already exists on GitHub
+        if not is_new_file:
+            payload["branch"] = "main"
+            if current_sha is not None:
+                payload["sha"] = current_sha
 
-        # Step 4: Dispatch mutated updates straight to the repository endpoint
+        # Step 4: Dispatch mutated updates straight to the repository branch endpoint
         put_response = requests.put(target_api_url, headers=headers, json=payload)
         
         if put_response.status_code == 200 or put_response.status_code == 201:
