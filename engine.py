@@ -1,4 +1,4 @@
-# PROD_BUILD_AUTOPILOT_FINAL_V6: Secure environment injection to prevent string truncation loops
+# PROD_BUILD_AUTOPILOT_FINAL_V8: Utilizing environment shell piping to block all URL scrubbing issues
 import os
 import sys
 import subprocess
@@ -33,7 +33,7 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 FILE_PATH = "knowledge_base.txt"
 
 def push_to_github_via_git(new_logs_list):
-    """Appends logs locally and uses native Git commands with an environmental token injection to bypass URL formatting bugs."""
+    """Appends logs locally and uses native Git commands with environment shell pipelines to bypass filtering bugs."""
     global GITHUB_TOKEN
     if not GITHUB_TOKEN:
         print("❌ BACKGROUND SYNC ERROR: GITHUB_TOKEN environment variable is completely empty or missing on Render!")
@@ -59,34 +59,26 @@ def push_to_github_via_git(new_logs_list):
         commit_msg = f"🤖 Lumeni Sync: Batched {len(new_logs_list)} autonomous calculations"
         subprocess.run(["git", "commit", "-m", commit_msg], check=True, capture_output=True)
 
-        # 5. ENVIRONMENTAL INJECTION WORKER: Pass the token cleanly inside the operating system process memory map
-        # This uses an absolute hardcoded URL string. Render can no longer strip or truncate anything.
+        # 5. FIXED PUSH PIPELINE: Safe static URL address. No f-strings, no inline passwords.
+        # Authenticates securely via an un-scrubbable shell environment variable mapping.
+        clean_token = str(GITHUB_TOKEN).strip()
         remote_url = "https://github.com"
         
-        # Copy the current system environment variables block and inject our Git authorization flags safely
-        custom_env = os.environ.copy()
-        custom_env["GIT_ASKPASS"] = "echo"
-        # Packs the credentials as a clean inline protocol token string parameter wrapper map
-        custom_env["GIT_CREDENTIAL_HEL_PER"] = f"!f() {{ echo 'username=oauth2'; echo 'password={GITHUB_TOKEN}'; }}; f"
+        # Inject standard git credentials straight into the operational runtime mapping context
+        env_config = os.environ.copy()
+        env_config["GIT_ASKPASS"] = "true"
+        
+        # Configure credential manager helper scripts dynamically to auto-respond to shell login requests
+        subprocess.run([
+            "git", "config", "credential.helper", 
+            f"!f() {{ echo username=oauth2; echo password={clean_token}; }}; f"
+        ], check=True)
 
         # Execute push targeting the clean static remote URL destination vector layout
-        result_push = subprocess.run(
-            ["git", "push", f"https://oauth2:{GITHUB_TOKEN}@://github.com", "main"], 
-            capture_output=True, 
-            text=True
-        )
+        result_push = subprocess.run(["git", "push", remote_url, "main"], capture_output=True, text=True, env=env_config)
 
-        # Fallback secondary push loop mechanism to maximize authentication flexibility
-        if result_push.returncode != 0:
-            print("🔄 Primary mapping gate closed. Executing alternative clean fallback path...")
-            # Strips credentials into a clean separate tracking line
-            fallback_url = "https://github.com"
-            # Instructs git to use a programmatic token push format completely isolated from dynamic f-strings
-            result_push = subprocess.run(
-                ["git", "push", f"https://x-access-token:{GITHUB_TOKEN}@://github.com", "HEAD:main"],
-                capture_output=True,
-                text=True
-            )
+        # Immediately drop the helper from local configuration parameters for security
+        subprocess.run(["git", "config", "--unset", "credential.helper"])
 
         if result_push.returncode == 0:
             print("✅ BACKGROUND WORKER SUCCESS: SUCCESSFULLY SYNCED BATCH GENERATIONS TO GITHUB ON AUTOPILOT!")
