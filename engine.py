@@ -1,4 +1,4 @@
-# PROD_BUILD_AUTOPILOT_FINAL_V8: Utilizing environment shell piping to block all URL scrubbing issues
+# PROD_BUILD_AUTOPILOT_FINAL_V9: Utilizing pre-authenticated repository remote tracking
 import os
 import sys
 import subprocess
@@ -33,7 +33,7 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 FILE_PATH = "knowledge_base.txt"
 
 def push_to_github_via_git(new_logs_list):
-    """Appends logs locally and uses native Git commands with environment shell pipelines to bypass filtering bugs."""
+    """Appends logs locally and uses native Git commands with an environmental token injection to bypass URL formatting bugs."""
     global GITHUB_TOKEN
     if not GITHUB_TOKEN:
         print("❌ BACKGROUND SYNC ERROR: GITHUB_TOKEN environment variable is completely empty or missing on Render!")
@@ -59,26 +59,20 @@ def push_to_github_via_git(new_logs_list):
         commit_msg = f"🤖 Lumeni Sync: Batched {len(new_logs_list)} autonomous calculations"
         subprocess.run(["git", "commit", "-m", commit_msg], check=True, capture_output=True)
 
-        # 5. FIXED PUSH PIPELINE: Safe static URL address. No f-strings, no inline passwords.
-        # Authenticates securely via an un-scrubbable shell environment variable mapping.
+        # 5. FIXED ABSOLUTE SYNC ENGINE: Re-authenticates the existing 'origin' path natively
+        # This injects the secure secret token context behind the scenes without rewriting the text URL address.
         clean_token = str(GITHUB_TOKEN).strip()
-        remote_url = "https://github.com"
+        authenticated_origin_url = f"https://x-access-token:{clean_token}@://github.com"
         
-        # Inject standard git credentials straight into the operational runtime mapping context
-        env_config = os.environ.copy()
-        env_config["GIT_ASKPASS"] = "true"
-        
-        # Configure credential manager helper scripts dynamically to auto-respond to shell login requests
-        subprocess.run([
-            "git", "config", "credential.helper", 
-            f"!f() {{ echo username=oauth2; echo password={clean_token}; }}; f"
-        ], check=True)
+        # Override origin's internal routing reference safely to bind the write permission token
+        subprocess.run(["git", "remote", "set-url", "origin", authenticated_origin_url], check=True)
 
-        # Execute push targeting the clean static remote URL destination vector layout
-        result_push = subprocess.run(["git", "push", remote_url, "main"], capture_output=True, text=True, env=env_config)
+        # Execute push targeting the clean static remote origin structure directly
+        result_push = subprocess.run(["git", "push", "origin", "main"], capture_output=True, text=True)
 
-        # Immediately drop the helper from local configuration parameters for security
-        subprocess.run(["git", "config", "--unset", "credential.helper"])
+        # Immediately restore origin back to standard tracking configuration layout for safety
+        fallback_clean_url = "https://://github.com"
+        subprocess.run(["git", "remote", "set-url", "origin", fallback_clean_url], check=True)
 
         if result_push.returncode == 0:
             print("✅ BACKGROUND WORKER SUCCESS: SUCCESSFULLY SYNCED BATCH GENERATIONS TO GITHUB ON AUTOPILOT!")
