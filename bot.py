@@ -43,6 +43,9 @@ GITHUB_REPO = "getblall/Lumeni"
 FILE_PATH = "knowledge_base.txt"
 BRANCH = "main"
 
+# Detect if the environment is a GitHub Actions runner
+IS_GITHUB_ACTION = os.environ.get("GITHUB_ACTIONS") == "true"
+
 def push_to_github(new_logs_list):
     """Fetches knowledge_base.txt, appends new logs, and commits back to GitHub."""
     if not GITHUB_TOKEN:
@@ -86,7 +89,6 @@ def push_to_github(new_logs_list):
 
     put_response = requests.put(url, headers=headers, json=payload)
     
-    # Direct checking logic to verify successful file transmission
     is_success_200 = bool(put_response.status_code == 200)
     is_success_201 = bool(put_response.status_code == 201)
     
@@ -98,7 +100,7 @@ def push_to_github(new_logs_list):
         return False
 
 def lumeni_engine_loop():
-    """Infinite loop generating math logs and batch syncing them to GitHub."""
+    """Generates math logs and batch syncs them to GitHub."""
     print("Lumeni SymPy Engine initiated...")
     while True:
         batch_logs = []
@@ -114,15 +116,19 @@ def lumeni_engine_loop():
                 # -------------------------------------------
                 
                 batch_logs.append(log_entry)
-                time.sleep(5)  # Pace calculations during the active window
+                time.sleep(1)  # Sped up processing pace slightly for faster execution
             except Exception as e:
                 print(f"Engine Error: {e}")
 
-        # Sync the entire batch to GitHub before the container enters sleep mode
+        # Sync the entire batch to GitHub
         if batch_logs:
             push_to_github(batch_logs)
             
-        # Optional: rest window to cooperate with Render's free tier lifecycle
+        # ENVIRONMENT CHECK: If running as a GitHub Action workflow, close cleanly instead of looping infinitely
+        if IS_GITHUB_ACTION:
+            print("GitHub Action processing loop complete. Exiting cleanly.")
+            sys.exit(0)
+            
         print("Window completed. Pausing engine...")
         time.sleep(60)
 
@@ -136,5 +142,5 @@ if __name__ == '__main__':
         port = int(os.environ.get("PORT", 5000))
         app.run(host='0.0.0.0', port=port)
     else:
-        # We are in GitHub Actions: Flask is missing, so execute the math loop directly on the main thread
+        # We are in GitHub Actions: Execute the loop directly to write out data, then terminate cleanly
         lumeni_engine_loop()
