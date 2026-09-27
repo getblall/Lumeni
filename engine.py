@@ -1,8 +1,10 @@
-# PROD_BUILD_AUTOPILOT_FINAL_V15: Integrated native shell environment configurations token mapping
+# PROD_BUILD_AUTOPILOT_FINAL_V20: Absolute fallback parameters to force-create missing files
 import os
 import sys
 import subprocess
 import random
+import json
+import base64
 import time
 import threading
 
@@ -13,6 +15,13 @@ except ImportError:
     print("Core dependency 'sympy' missing. Installing automatically...")
     subprocess.check_call([sys.executable, "-m", "pip", "install", "sympy"])
     import sympy as sp
+
+try:
+    import requests
+except ImportError:
+    print("Core dependency 'requests' missing. Installing automatically...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
+    import requests
 
 try:
     from flask import Flask
@@ -32,68 +41,78 @@ if HAS_FLASK:
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 FILE_PATH = "knowledge_base.txt"
 
-def push_to_github_via_git(new_logs_list):
-    """Appends logs locally and uses native Git environment token injection to bypass Render's string truncation bugs."""
+def push_to_github_via_api(new_logs_list):
+    """Updates knowledge_base.txt directly using Python HTTP handshakes with explicit missing file initialization fallbacks."""
     global GITHUB_TOKEN
     if not GITHUB_TOKEN:
         print("❌ BACKGROUND SYNC ERROR: GITHUB_TOKEN environment variable is completely empty or missing on Render!")
         return False
 
-    print(f"🔄 BACKGROUND WORKER: Initializing native Git tree synchronization sequence for {len(new_logs_list)} items...")
+    print(f"🔄 BACKGROUND WORKER: Initializing HTTP payload synchronization for {len(new_logs_list)} items...")
     
+    target_api_url = "https://github.com"
+    clean_token = str(GITHUB_TOKEN).strip()
+    
+    headers = {
+        "Authorization": f"token {clean_token}",
+        "Accept": "application/vnd.github.v3+json",
+        "User-Agent": "LumeniCoreEngineApp-v20.0",
+        "Content-Type": "application/json"
+    }
+
+    current_sha = None
+    current_content = ""
+    is_new_file = False
+
     try:
-        # 1. Append the batch of math calculations to the local file
-        log_string = "\n".join(new_logs_list) + "\n"
-        with open(FILE_PATH, "a", encoding="utf-8") as f:
-            f.write(log_string)
-        print("📂 BACKGROUND WORKER: Appended calculations to local tracking container.")
-
-        # 2. Configure Git identification parameters to prevent commit blocking flags
-        subprocess.run(["git", "config", "user.name", "Lumeni Engine Bot"], check=True, capture_output=True)
-        subprocess.run(["git", "config", "user.email", "lumeni-bot@onrender.com"], check=True, capture_output=True)
-
-        # 3. Stage the modified knowledge base file
-        subprocess.run(["git", "add", FILE_PATH], check=True, capture_output=True)
-
-        # 4. Commit the changes locally
-        commit_msg = f"🤖 Lumeni Sync: Batched {len(new_logs_list)} autonomous calculations"
-        subprocess.run(["git", "commit", "-m", commit_msg], check=True, capture_output=True)
-
-        # 5. FIXED ENVIRONMENT SHELL INJECTION:
-        # Simple, un-scrubbable static web address. No tokens, no f-strings, no colons in the URL list parameters.
-        clean_token = str(GITHUB_TOKEN).strip()
-        static_repository_url = "https://github.com"
+        # Step 1: Read the existing file content to grab its unique SHA code
+        response = requests.get(target_api_url, headers=headers)
         
-        # Inject standard Git password parameters directly into the operational runtime environment dictionary maps
-        env_config = os.environ.copy()
-        env_config["GIT_ASKPASS"] = "echo"
-        env_config["GIT_USERNAME"] = "oauth2"
-        env_config["GIT_PASSWORD"] = clean_token
+        if response.status_code == 200:
+            file_data = response.json()
+            current_sha = file_data.get("sha")
+            current_content = base64.b64decode(file_data.get("content", "")).decode("utf-8")
+            print("📂 Located existing tracking database file on GitHub.")
+        elif response.status_code == 404 or response.status_code == 406:
+            print("📝 Target file not found in repository root. Activating initialization fallback logic...")
+            is_new_file = True
+        else:
+            print(f"❌ Failed to reach GitHub gateway during lookup (Status {response.status_code}): {response.text}")
+            return False
 
-        # Safely remove 'autopilot' if it stuck around from a previous run
-        subprocess.run(["git", "remote", "remove", "autopilot"], capture_output=True)
+        # Step 2: Append your brand-new advanced math calculations
+        log_string = "\n".join(new_logs_list)
+        if current_content:
+            updated_content = current_content + "\n" + log_string
+        else:
+            updated_content = log_string
+            
+        encoded_content_str = base64.b64encode(updated_content.encode("utf-8")).decode("utf-8")
+
+        # Step 3: Package payload parameters into a clean dictionary map
+        payload = {
+            "message": "🤖 Lumeni Sync: Batched autonomous calculations",
+            "content": encoded_content_str,
+            "branch": "main"
+        }
         
-        # Add the clean, static tracking remote natively
-        subprocess.run(["git", "remote", "add", "autopilot", static_repository_url], check=True)
+        # Only inject the SHA parameter if the file already exists on GitHub
+        if not is_new_file and current_sha is not None:
+            payload["sha"] = current_sha
 
-        # Execute push passing environment credentials securely via shell variables mapping context
-        result_push = subprocess.run(["git", "push", "autopilot", "HEAD:main"], capture_output=True, text=True, env=env_config)
-
-        # Clean up and destroy the temporary remote immediately after push for security
-        subprocess.run(["git", "remote", "remove", "autopilot"], capture_output=True)
-
-        if result_push.returncode == 0:
+        # Step 4: Dispatch mutated updates straight to the repository endpoint
+        put_response = requests.put(target_api_url, headers=headers, json=payload)
+        
+        if put_response.status_code == 200 or put_response.status_code == 201:
             print("✅ BACKGROUND WORKER SUCCESS: SUCCESSFULLY SYNCED BATCH GENERATIONS TO GITHUB ON AUTOPILOT!")
             return True
         else:
-            print(f"❌ BACKGROUND SYNC REJECTED BY GITHUB: {result_push.stderr}")
+            print(f"❌ Gateway transaction rejected with Code {put_response.status_code}")
+            print(f"ℹ️ Gateway Server Details: {put_response.text}")
             return False
 
-    except subprocess.CalledProcessError as git_err:
-        print(f"❌ BACKGROUND GIT PROCESS ERROR: {git_err.stderr}")
-        return False
     except Exception as e:
-        print(f"❌ BACKGROUND UNEXPECTED FAULT: {e}")
+        print(f"❌ Critical connection framework transaction fault encountered: {e}")
         return False
 
 def generate_autonomous_math():
@@ -168,7 +187,7 @@ def lumeni_engine_loop():
 
         # Sync the entire batch to GitHub
         if batch_logs:
-            push_to_github_via_git(batch_logs)
+            push_to_github_via_api(batch_logs)
         else:
             print("⚠️ Sync skipped: No clean calculations were generated.")
             
