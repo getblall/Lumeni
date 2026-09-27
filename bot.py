@@ -1,3 +1,4 @@
+# PROD_REV_V2: Explicit fresh build to break GitHub action runner code caching.
 import os
 import sys
 import subprocess
@@ -57,21 +58,21 @@ def push_to_github(new_logs_list):
         print("Please ensure your workflow file passes the token under 'env: GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}'")
         return False
 
-    url = "https://github.com"
+    # Force a direct hardcoded URL variable string expression 
+    target_api_url = "https://github.com"
     
-    # FIXED HEADERS: Added User-Agent and switched to 'Bearer' token to resolve HTTP 406 Blocks
     headers = {
         "Authorization": f"Bearer {GITHUB_TOKEN}",
-        "User-Agent": "LumeniMathEngine-v1.0",
+        "User-Agent": "LumeniMathEngine-v2.0",
         "Accept": "application/vnd.github.v3+json",
         "Content-Type": "application/json"
     }
 
-    print(f"🔄 Attempting to sync {len(new_logs_list)} records to: {url}")
+    print(f"🔄 Hardcoded Target API Routing Vector: {target_api_url}")
 
     try:
         # 1. Fetch current file to get its content and unique SHA blob
-        response = requests.get(url, headers=headers)
+        response = requests.get(target_api_url, headers=headers)
         current_sha = None
         current_content = ""
 
@@ -100,7 +101,7 @@ def push_to_github(new_logs_list):
         if current_sha:
             payload["sha"] = current_sha
 
-        put_response = requests.put(url, headers=headers, json=payload)
+        put_response = requests.put(target_api_url, headers=headers, json=payload)
         
         is_success_200 = bool(put_response.status_code == 200)
         is_success_201 = bool(put_response.status_code == 201)
@@ -163,3 +164,4 @@ if __name__ == '__main__':
     else:
         # We are in GitHub Actions: Execute the loop directly to write out data, then terminate cleanly
         lumeni_engine_loop()
+
