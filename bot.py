@@ -37,14 +37,12 @@ if HAS_FLASK:
     def home():
         return "Lumeni Engine is fully operational and syncing on autopilot.", 200
 
-# GitHub Configuration - Fixed trailing / explicit formatting strings
+# GitHub Configuration
 GITHUB_TOKEN = (
     os.environ.get("GITHUB_TOKEN") or 
     os.environ.get("INPUT_GITHUB_TOKEN") or 
     os.environ.get("ACTIONS_RUNTIME_TOKEN")
 )
-GITHUB_REPO = "getblall/Lumeni"
-FILE_PATH = "knowledge_base.txt"
 BRANCH = "main"
 
 # Detect if the environment is a GitHub Actions runner
@@ -59,14 +57,15 @@ def push_to_github(new_logs_list):
         print("Please ensure your workflow file passes the token under 'env: GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}'")
         return False
 
-    # FIXED URL: Fixed endpoint string construction to guarantee absolute domain routing separation
-    url = f"https://github.com{GITHUB_REPO}/contents/{FILE_PATH}"
+    # ABSOLUTE HARDCODED FIX: No string construction, no dynamic variable bugs.
+    url = "https://github.com"
+    
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
         "Accept": "application/vnd.github.v3+json"
     }
 
-    print(f"🔄 Attempting to sync {len(new_logs_list)} records to {url}...")
+    print(f"🔄 Attempting to sync {len(new_logs_list)} records to: {url}")
 
     try:
         # 1. Fetch current file to get its content and unique SHA blob
