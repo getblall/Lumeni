@@ -58,8 +58,9 @@ def push_to_github(new_logs_list):
     if current_sha:
         payload["sha"] = current_sha
 
-    put_response = requests.put(url, headers=headers, json=payload)
+       put_response = requests.put(url, headers=headers, json=payload)
     
+    # GitHub returns 200 (OK) or 201 (Created) on successful file updates
     if put_response.status_code in:
         print(f"Successfully synced {len(new_logs_list)} calculations to GitHub!")
         return True
