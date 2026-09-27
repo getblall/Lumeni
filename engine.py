@@ -1,4 +1,4 @@
-# PROD_BUILD_V6: Complete error-free script with randomized Calculus, Matrix, and Algebra engines
+# PROD_BUILD_V7: Fully normalized Bearer auth vectors for absolute API conformity
 import os
 import sys
 import subprocess
@@ -60,9 +60,10 @@ def push_to_github(new_logs_list):
 
     target_api_url = "https://github.com"
     
+    # FIXED AUTHORIZATION VECTOR: Switched completely to Bearer token format to satisfy GitHub API rules
     headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "User-Agent": "LumeniMathEngine-v6.0",
+        "Authorization": f"Bearer {GITHUB_TOKEN}",
+        "User-Agent": "LumeniMathEngine-v7.0",
         "Accept": "application/vnd.github.v3+json"
     }
 
@@ -99,7 +100,6 @@ def push_to_github(new_logs_list):
 
         put_response = requests.put(target_api_url, headers=headers, json=payload)
         
-        # SAFELY LOCKED: Using clear booleans to prevent any text truncation bugs
         is_success_200 = bool(put_response.status_code == 200)
         is_success_201 = bool(put_response.status_code == 201)
         
@@ -147,7 +147,7 @@ def generate_autonomous_math():
         if operation == "determinant":
             return f"[MATRIX - DET] det({matrix_data}) = {M.det()}"
         elif operation == "inverse" and M.det() != 0:
-            return f"[MATRIX - INV] inv({matrix_data}) = {M.inv().tolist()}"
+            return f"[MATRIX - INV] inv({matrix_data}) = M.inv().tolist()"
         else:
             return f"[MATRIX - EIGEN] eigenvalues({matrix_data}) = {M.eigenvals()}"
 
