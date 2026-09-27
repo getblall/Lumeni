@@ -1,4 +1,4 @@
-# PROD_BUILD_AUTOPILOT_FINAL_V25: Integrated Issue Channel Data Capture to completely pass 404 blocks
+# PROD_BUILD_AUTOPILOT_FINAL_V26: Switched to Bearer token authorization formats to pass Issue 404 gateways
 import os
 import sys
 import subprocess
@@ -40,7 +40,7 @@ if HAS_FLASK:
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 
 def push_to_github_via_api(new_logs_list):
-    """Updates the knowledge base directly by posting a comment to Issue #1, completely bypassing 404 repo path file blocks."""
+    """Updates the knowledge base directly by posting a comment to Issue #1 using modern Bearer security handshakes."""
     global GITHUB_TOKEN
     if not GITHUB_TOKEN:
         print("❌ BACKGROUND SYNC ERROR: GITHUB_TOKEN environment variable is completely empty or missing on Render!")
@@ -48,26 +48,29 @@ def push_to_github_via_api(new_logs_list):
 
     print(f"🔄 BACKGROUND WORKER: Initializing HTTP Issue comment payload synchronization for {len(new_logs_list)} items...")
     
-    # FIXED ENDPOINT: Redirects traffic straight into Issue #1 comment pipelines
     target_api_url = "https://github.com"
     clean_token = str(GITHUB_TOKEN).strip()
     
+    # FIXED: Replaced 'token' schema with the modern 'Bearer' string wrapper to pass issue thread verifications
     headers = {
-        "Authorization": f"token {clean_token}",
-        "Accept": "application/vnd.github.v3+json",
-        "User-Agent": "LumeniCoreEngineApp-v25.0",
+        "Authorization": f"Bearer {clean_token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
         "Content-Type": "application/json"
     }
 
-    # Format the entire advanced math calculations batch into a clean, readable text post block
+    # Format the entire advanced math calculations batch into a clean, markdown block code post
     body_text = "🤖 **Lumeni Autonomous Math Sync Batch Update**\n\n```text\n" + "\n".join(new_logs_list) + "\n```"
     payload = {"body": body_text}
 
     try:
-        # Dispatch updates straight to the secure issue comment pipeline endpoint
+        # Dispatch updates straight to the issue comment pipeline endpoint
         response = requests.post(target_api_url, headers=headers, json=payload)
         
-        if response.status_code == 201:
+        status_string = str(response.status_code).strip()
+        
+        # Check for successful issue creation codes
+        if status_string == "201":
             print("✅ BACKGROUND WORKER SUCCESS: SUCCESSFULLY SYNCED BATCH GENERATIONS TO GITHUB ON AUTOPILOT!")
             return True
         else:
