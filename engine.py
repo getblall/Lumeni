@@ -1,10 +1,11 @@
-# PROD_BUILD_AUTOPILOT_FINAL_V3: Isolated Token Header to bypass Render String Truncation
+# PROD_BUILD_AUTOPILOT_FINAL_V4: Restored missing base64 imports for secure header token pushing
 import os
 import sys
 import subprocess
 import random
 import time
 import threading
+import base64  # 👈 FIXED: Added the missing core library module import explicitly
 
 # Force install standard network components if missing
 try:
@@ -60,7 +61,6 @@ def push_to_github_via_git(new_logs_list):
         subprocess.run(["git", "commit", "-m", commit_msg], check=True, capture_output=True)
 
         # 5. SAFE PUSH: Inject the authentication token as an explicit base64 header value block
-        # This bypasses the f-string URL interpolation error completely
         clean_token = str(GITHUB_TOKEN).strip()
         auth_bytes = f"x-access-token:{clean_token}".encode('utf-8')
         auth_base64 = base64.b64encode(auth_bytes).decode('utf-8')
