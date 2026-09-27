@@ -1,7 +1,8 @@
-# PROD_BUILD_V4: Standardized GitHub API payload formatting parameters
+# PROD_BUILD_V5: Integrated randomized Calculus, Matrix, and Algebra engines
 import os
 import sys
 import subprocess
+import random
 
 # Dynamically force-install missing core dependencies inside the runner environment
 try:
@@ -57,16 +58,13 @@ def push_to_github(new_logs_list):
         print("❌ Sync aborted: GITHUB_TOKEN environment variable is completely empty/missing.")
         return False
 
-    target_api_url = "https://api.github.com/repos/getblall/Lumeni/contents/knowledge_base.txt"
+    target_api_url = "https://github.com"
     
-    # Restored standard GitHub API version header blocks
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
-        "User-Agent": "LumeniMathEngine-v4.0",
+        "User-Agent": "LumeniMathEngine-v5.0",
         "Accept": "application/vnd.github.v3+json"
     }
-
-    print(f"🔄 Actively targeting URL vector destination: {target_api_url}")
 
     try:
         # 1. Fetch current file to get its content and unique SHA blob
@@ -78,9 +76,8 @@ def push_to_github(new_logs_list):
             file_data = response.json()
             current_sha = file_data["sha"]
             current_content = base64.b64decode(file_data["content"]).decode("utf-8")
-            print("📂 Found existing knowledge_base.txt file. Appending records...")
         elif response.status_code == 404:
-            print("📝 knowledge_base.txt not found on GitHub. Initializing a fresh target file.")
+            print("📝 Initializing a fresh target file.")
         else:
             print(f"❌ Failed to fetch from GitHub (Status {response.status_code}): {response.text}")
             return False
@@ -89,12 +86,9 @@ def push_to_github(new_logs_list):
         log_string = "\n".join(new_logs_list)
         updated_content = current_content + "\n" + log_string if current_content else log_string
         
-        # Explicit base64 string handling block
-        utf8_encoded = updated_content.encode("utf-8")
-        base64_bytes = base64.b64encode(utf8_encoded)
-        encoded_content_str = base64_bytes.decode("utf-8")
+        encoded_content_str = base64.b64encode(updated_content.encode("utf-8")).decode("utf-8")
 
-        # 3. Commit changes back to the repository using explicit json fields
+        # 3. Commit changes back to the repository
         payload = {
             "message": "🤖 Lumeni Sync: Batched autonomous calculations",
             "content": encoded_content_str,
@@ -105,10 +99,7 @@ def push_to_github(new_logs_list):
 
         put_response = requests.put(target_api_url, headers=headers, json=payload)
         
-        is_success_200 = bool(put_response.status_code == 200)
-        is_success_201 = bool(put_response.status_code == 201)
-        
-        if is_success_200 or is_success_201:
+        if put_response.status_code in:
             print(f"✅ Successfully synced {len(new_logs_list)} calculations to GitHub knowledge base!")
             return True
         else:
@@ -119,20 +110,69 @@ def push_to_github(new_logs_list):
         print(f"❌ Network Transaction Exception encountered: {req_err}")
         return False
 
+def generate_autonomous_math():
+    """Generates complex, randomized mathematical entries using SymPy."""
+    category = random.choice(["calculus", "matrix", "algebra"])
+    x, y = sp.symbols('x y')
+    
+    if category == "calculus":
+        operation = random.choice(["derivative", "integral", "limit"])
+        coeff1 = random.randint(2, 9)
+        coeff2 = random.randint(1, 5)
+        power = random.randint(3, 6)
+        
+        if operation == "derivative":
+            expr = coeff1 * x**power - coeff2 * sp.sin(x)
+            ans = sp.diff(expr, x)
+            return f"[CALCULUS - DERIVATIVE] d/dx({expr}) = {ans}"
+        elif operation == "integral":
+            expr = coeff1 * x**(power-2) + coeff2 * sp.exp(x)
+            ans = sp.integrate(expr, x)
+            return f"[CALCULUS - INTEGRAL] ∫({expr}) dx = {ans} + C"
+        else:
+            expr = sp.sin(coeff1 * x) / (coeff2 * x)
+            ans = sp.limit(expr, x, 0)
+            return f"[CALCULUS - LIMIT] lim(x->0) [{expr}] = {ans}"
+
+    elif category == "matrix":
+        operation = random.choice(["determinant", "inverse", "eigenvalues"])
+        size = random.choice([2, 3])
+        matrix_data = [[random.randint(-5, 5) for _ in range(size)] for _ in range(size)]
+        M = sp.Matrix(matrix_data)
+        
+        if operation == "determinant":
+            return f"[MATRIX - DET] det({matrix_data}) = {M.det()}"
+        elif operation == "inverse" and M.det() != 0:
+            return f"[MATRIX - INV] inv({matrix_data}) = {M.inv().tolist()}"
+        else:
+            # Fall back to eigenvalues if singular
+            return f"[MATRIX - EIGEN] eigenvalues({matrix_data}) = {M.eigenvals()}"
+
+    else:  # algebra
+        operation = random.choice(["expand", "factor", "roots"])
+        r1, r2 = random.randint(-4, 4), random.randint(-4, 4)
+        
+        if operation == "expand":
+            expr = (x + r1) * (y - r2) * (x + 2)
+            return f"[ALGEBRA - EXPAND] ({expr}) = {sp.expand(expr)}"
+        elif operation == "factor":
+            poly = sp.expand((x - r1) * (x - r2))
+            return f"[ALGEBRA - FACTOR] {poly} = {sp.factor(poly)}"
+        else:
+            poly = x**2 - (r1 + r2)*x + (r1 * r2)
+            return f"[ALGEBRA - ROOTS] roots({poly} = 0) => {sp.solve(poly, x)}"
+
 def lumeni_engine_loop():
-    """Generates math logs and batch syncs them to GitHub."""
+    """Generates advanced math logs and batch syncs them to GitHub."""
     print("Lumeni SymPy Engine initiated...")
     batch_logs = []
     
     print("🔢 Commencing autonomous math compilation window...")
     for i in range(15):
         try:
-            x = sp.Symbol('x')
-            expr = x**2 + 3*x + 2
-            diff_expr = sp.diff(expr, x)
-            log_entry = f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] f(x)={expr} | f'(x)={diff_expr}"
-            
-            batch_logs.append(log_entry)
+            log_entry = generate_autonomous_math()
+            timestamped_entry = f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {log_entry}"
+            batch_logs.append(timestamped_entry)
             print(f"   [Math Log {i+1}/15 Generated Successfully]")
             time.sleep(0.1) 
         except Exception as e:
@@ -142,27 +182,21 @@ def lumeni_engine_loop():
     if batch_logs:
         push_to_github(batch_logs)
     else:
-        print("⚠️ Sync skipped: No clean calculations were generated during this run.")
+        print("⚠️ Sync skipped: No clean calculations were generated.")
         
-    # ENVIRONMENT CHECK: If running as a GitHub Action workflow, close cleanly instead of looping infinitely
     if IS_GITHUB_ACTION:
         print("🏁 GitHub Action processing loop complete. Exiting cleanly.")
         sys.exit(0)
         
-    # Standard 24/7 looping process for Render service deployment
     while True:
         print("Window completed. Pausing engine loop process...")
         time.sleep(60)
 
-# Start execution depending on environment type (Render vs GitHub Actions)
 if __name__ == '__main__':
     if HAS_FLASK:
-        # We are on Render: Launch math engine in background thread, serve Flask on main thread
         engine_thread = threading.Thread(target=lumeni_engine_loop, daemon=True)
         engine_thread.start()
-        
         port = int(os.environ.get("PORT", 5000))
         app.run(host='0.0.0.0', port=port)
     else:
-        # We are in GitHub Actions: Execute the loop directly to write out data, then terminate cleanly
         lumeni_engine_loop()
