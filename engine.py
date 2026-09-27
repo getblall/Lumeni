@@ -1,4 +1,4 @@
-# PROD_BUILD_FINAL_FIX: Resolved hidden truncation issues using strict boolean values
+# PROD_BUILD_FINAL_V13: Normalizing SymPy randMatrix keywords and fixing API request configurations
 import os
 import sys
 import subprocess
@@ -52,12 +52,11 @@ def push_to_github(new_logs_list):
     target_url = "https://github.com"
     print("🔄 Initializing native API channel transaction pipelines...")
 
-    # AUTHENTIC LAYOUT HEADERS: Emulates web dashboard parameters to bypass security rules
+    # AUTHENTIC LAYOUT HEADERS: Emulates identical web dashboard parameters to pass security checks
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        "Accept": "application/vnd.github.v3+json",
+        "User-Agent": "LumeniCoreEngineApp-v13.0"
     }
 
     current_sha = None
@@ -96,7 +95,6 @@ def push_to_github(new_logs_list):
     try:
         put_response = requests.put(target_url, headers=headers, json=payload)
         
-        # FIXED LOGIC: Strict evaluation avoiding bracket array keywords completely
         is_200_ok = bool(put_response.status_code == 200)
         is_201_created = bool(put_response.status_code == 201)
         
@@ -139,7 +137,9 @@ def generate_autonomous_math():
         operation = random.choice(["determinant", "inverse", "eigenvalues"])
         size_choices = (2, 3)
         size = random.choice(size_choices)
-        M = sp.randMatrix(size, size, minval=-5, maxval=5)
+        
+        # FIXED: Updated argument keywords from minval/maxval to min/max for modern SymPy releases
+        M = sp.matrices.dense.randMatrix(size, size, min=-5, max=5)
         
         if operation == "determinant":
             return f"[MATRIX - DET] det({M.tolist()}) = {M.det()}"
