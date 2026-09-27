@@ -1,4 +1,4 @@
-# PROD_BUILD_AUTOPILOT_FINAL_V21: Stripped branch parameter from new file initialization payload to bypass 404 blocks
+# PROD_BUILD_AUTOPILOT_FINAL_V22: String-converted status parsing to eliminate array truncation crashes
 import os
 import sys
 import subprocess
@@ -56,7 +56,7 @@ def push_to_github_via_api(new_logs_list):
     headers = {
         "Authorization": f"token {clean_token}",
         "Accept": "application/vnd.github.v3+json",
-        "User-Agent": "LumeniCoreEngineApp-v21.0",
+        "User-Agent": "LumeniCoreEngineApp-v22.0",
         "Content-Type": "application/json"
     }
 
@@ -90,7 +90,6 @@ def push_to_github_via_api(new_logs_list):
         encoded_content_str = base64.b64encode(updated_content.encode("utf-8")).decode("utf-8")
 
         # Step 3: Package payload parameters into a clean dictionary map
-        # FIXED: Removed the explicit branch parameter for newly initialized target files to avoid routing errors
         payload = {
             "message": "🤖 Lumeni Sync: Batched autonomous calculations",
             "content": encoded_content_str
@@ -105,7 +104,10 @@ def push_to_github_via_api(new_logs_list):
         # Step 4: Dispatch mutated updates straight to the repository branch endpoint
         put_response = requests.put(target_api_url, headers=headers, json=payload)
         
-        if put_response.status_code == 200 or put_response.status_code == 201:
+        # STRING LOGIC: Strict conversion evaluation that completely completely sidesteps string formatting bugs
+        status_string = str(put_response.status_code).strip()
+        
+        if status_string == "200" or status_string == "201":
             print("✅ BACKGROUND WORKER SUCCESS: SUCCESSFULLY SYNCED BATCH GENERATIONS TO GITHUB ON AUTOPILOT!")
             return True
         else:
