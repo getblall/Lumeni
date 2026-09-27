@@ -1,4 +1,4 @@
-# PROD_BUILD_V11: Standardized matrix dimension parameters and fixed curl JSON payloads
+# PROD_BUILD_V12: Stripped explicit branch fields to avoid Content Routing 404 Errors
 import os
 import sys
 import subprocess
@@ -23,7 +23,6 @@ except ImportError:
     HAS_FLASK = False
     print("Flask module not detected. Proceeding in headless compiler mode...")
 
-# Initialize Flask only if it is available
 if HAS_FLASK:
     app = Flask(__name__)
 
@@ -33,7 +32,6 @@ if HAS_FLASK:
 
 # GitHub Configuration
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
-BRANCH = "main"
 IS_GITHUB_ACTION = os.environ.get("GITHUB_ACTIONS") == "true"
 
 def push_to_github(new_logs_list):
@@ -67,10 +65,12 @@ def push_to_github(new_logs_list):
                         current_sha = data["sha"]
                         current_content = base64.b64decode(data["content"]).decode("utf-8")
                         print("📂 Found existing knowledge_base.txt file via curl.")
-                    elif data.get("message") == "Not Found":
+                    elif data.get("message") == "Not Found" or "not found" in str(data.get("message")).lower():
                         print("📝 knowledge_base.txt not found on GitHub. Starting a fresh file build.")
                     else:
-                        print(f"⚠️ Unexpected gateway structure: {data.get('message', 'Unknown Error')}")
+                        # Catch hidden tracking messages
+                        if "message" in data:
+                            print(f"ℹ️ Status context feedback message: {data['message']}")
             except json.JSONDecodeError:
                 print("📝 Output is plain text or empty. Proceeding with fresh file write mapping context.")
         else:
@@ -84,11 +84,11 @@ def push_to_github(new_logs_list):
     updated_content = current_content + "\n" + log_string if current_content else log_string
     encoded_content_str = base64.b64encode(updated_content.encode("utf-8")).decode("utf-8")
 
-    # Step 3: Write payload data parameters to a temporary hidden directory file to avoid CLI space injection
+    # Step 3: Write payload data parameters to a temporary hidden directory file
+    # FIXED: Stripped explicit branch parameters to let GitHub Actions resolve HEAD routing natively
     payload = {
         "message": "🤖 Lumeni Sync: Batched autonomous calculations",
-        "content": encoded_content_str,
-        "branch": BRANCH
+        "content": encoded_content_str
     }
     if current_sha:
         payload["sha"] = current_sha
@@ -117,13 +117,13 @@ def push_to_github(new_logs_list):
                         os.remove("payload.json")
                     return True
                 else:
-                    print(f"❌ Gateway transaction rejected: {result_put.stdout}")
+                    print(f"❌ Gateway transaction rejected (Status check failed): {result_put.stdout}")
                     return False
             except json.JSONDecodeError:
                 print(f"❌ Non-JSON gateway content received during put operation: {result_put.stdout}")
                 return False
         else:
-            print("❌ Received an absolute blank transaction response acknowledgment signal context vector.")
+            print("❌ Received an absolute blank transaction response acknowledgment vector.")
             return False
     except Exception as put_err:
         print(f"❌ OS pipeline connection transaction failed: {put_err}")
@@ -155,7 +155,6 @@ def generate_autonomous_math():
 
     elif category == "matrix":
         operation = random.choice(["determinant", "inverse", "eigenvalues"])
-        # FIXED ARRAY STRUCT: Explicitly using a tuple format block to bypass compiler filtering bugs
         size_choices = (2, 3)
         size = random.choice(size_choices)
         matrix_data = [[random.randint(-5, 5) for _ in range(size)] for _ in range(size)]
