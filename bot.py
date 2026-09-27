@@ -1,22 +1,31 @@
-import os
+\import os
 import base64
 import time
 import threading
-from flask import Flask
 import sympy as sp
 import requests
 
-app = Flask(__name__)
+# Dynamically handle Flask if it is missing from the local environment
+try:
+    from flask import Flask
+    HAS_FLASK = True
+except ImportError:
+    HAS_FLASK = False
+    print("Flask module not detected. Proceeding in headless compiler mode...")
+
+# Initialize Flask only if the library is physically available (e.g., on Render)
+if HAS_FLASK:
+    app = Flask(__name__)
+
+    @app.route('/')
+    def home():
+        return "Lumeni Engine is fully operational and syncing on autopilot.", 200
 
 # GitHub Configuration (Uses environment variables for security)
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 GITHUB_REPO = "getblall/Lumeni"
 FILE_PATH = "knowledge_base.txt"
 BRANCH = "main"
-
-@app.route('/')
-def home():
-    return "Lumeni Engine is fully operational and syncing on autopilot.", 200
 
 def push_to_github(new_logs_list):
     """Fetches knowledge_base.txt, appends new logs, and commits back to GitHub."""
@@ -61,7 +70,7 @@ def push_to_github(new_logs_list):
 
     put_response = requests.put(url, headers=headers, json=payload)
     
-    # Alternative direct checking logic to guarantee zero compiler text truncation
+    # Direct checking logic to verify successful file transmission
     is_success_200 = bool(put_response.status_code == 200)
     is_success_201 = bool(put_response.status_code == 201)
     
@@ -101,10 +110,15 @@ def lumeni_engine_loop():
         print("Window completed. Pausing engine...")
         time.sleep(60)
 
-# Start the math engine loop in a separate background thread
-engine_thread = threading.Thread(target=lumeni_engine_loop, daemon=True)
-engine_thread.start()
-
+# Start execution depending on environment type (Render vs GitHub Actions)
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    if HAS_FLASK:
+        # We are on Render: Launch math engine in background thread, serve Flask on main thread
+        engine_thread = threading.Thread(target=lumeni_engine_loop, daemon=True)
+        engine_thread.start()
+        
+        port = int(os.environ.get("PORT", 5000))
+        app.run(host='0.0.0.0', port=port)
+    else:
+        # We are in GitHub Actions: Flask is missing, so execute the math loop directly on the main thread
+        lumeni_engine_loop()
