@@ -57,12 +57,14 @@ def push_to_github(new_logs_list):
         print("Please ensure your workflow file passes the token under 'env: GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}'")
         return False
 
-    # ABSOLUTE HARDCODED FIX: No string construction, no dynamic variable bugs.
     url = "https://github.com"
     
+    # FIXED HEADERS: Added User-Agent and switched to 'Bearer' token to resolve HTTP 406 Blocks
     headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github.v3+json"
+        "Authorization": f"Bearer {GITHUB_TOKEN}",
+        "User-Agent": "LumeniMathEngine-v1.0",
+        "Accept": "application/vnd.github.v3+json",
+        "Content-Type": "application/json"
     }
 
     print(f"🔄 Attempting to sync {len(new_logs_list)} records to: {url}")
