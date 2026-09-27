@@ -1,4 +1,4 @@
-# PROD_BUILD_V9: Re-engineered connection using OS system level curl pipelines
+# PROD_BUILD_V10: Fixed curl response exception mapping for blank/missing file targets
 import os
 import sys
 import subprocess
@@ -45,6 +45,9 @@ def push_to_github(new_logs_list):
     target_url = "https://github.com"
     print(f"🔄 Processing file sync operations using OS curl pipeline layout...")
 
+    current_sha = None
+    current_content = ""
+
     # Step 1: Use a clean curl command line string execution block to get the current file and SHA
     cmd_get = [
         "curl", "-s", "-X", "GET", target_url,
@@ -55,23 +58,27 @@ def push_to_github(new_logs_list):
     
     try:
         result_get = subprocess.run(cmd_get, capture_output=True, text=True, check=True)
-        current_sha = None
-        current_content = ""
-
-        if result_get.stdout:
-            data = json.loads(result_get.stdout)
-            if "sha" in data:
-                current_sha = data["sha"]
-                current_content = base64.b64decode(data["content"]).decode("utf-8")
-                print("📂 Found existing knowledge_base.txt file via curl.")
-            elif "message" in data and data["message"] == "Not Found":
-                print("📝 knowledge_base.txt not found on GitHub. Starting a fresh file build.")
-            else:
-                print(f"⚠️ Unexpected gateway response configuration: {result_get.stdout}")
+        
+        # FIXED PARSING LOGIC: Check if output is non-empty before processing JSON mapping structures
+        if result_get.stdout and result_get.stdout.strip():
+            try:
+                data = json.loads(result_get.stdout)
+                if isinstance(data, dict):
+                    if "sha" in data:
+                        current_sha = data["sha"]
+                        current_content = base64.b64decode(data["content"]).decode("utf-8")
+                        print("📂 Found existing knowledge_base.txt file via curl.")
+                    elif data.get("message") == "Not Found":
+                        print("📝 knowledge_base.txt not found on GitHub. Starting a fresh file build.")
+                    else:
+                        print(f"⚠️ Unexpected gateway structure: {data.get('message', 'Unknown Error')}")
+            except json.JSONDecodeError:
+                print("📝 Output is plain text or empty. Proceeding with fresh file write mapping context.")
+        else:
+            print("📝 Target file is completely blank. Initializing fresh tracking container layout.")
+            
     except Exception as err:
-        print(f"📝 Proceeding with new file tracking structure layout ({err})")
-        current_sha = None
-        current_content = ""
+        print(f"⚠️ System pipeline lookup exception caught: {err}. Proceeding with fresh initialization.")
 
     # Step 2: Append the batch of new math calculations
     log_string = "\n".join(new_logs_list)
@@ -102,17 +109,23 @@ def push_to_github(new_logs_list):
 
     try:
         result_put = subprocess.run(cmd_put, capture_output=True, text=True, check=True)
-        if result_put.stdout:
-            put_data = json.loads(result_put.stdout)
-            if "content" in put_data:
-                print("✅ Successfully synced calculations directly to GitHub knowledge base via curl pipeline!")
-                # Clean up temporary data file securely
-                if os.path.exists("payload.json"):
-                    os.remove("payload.json")
-                return True
-            else:
-                print(f"❌ Gateway transaction rejected: {result_put.stdout}")
+        if result_put.stdout and result_put.stdout.strip():
+            try:
+                put_data = json.loads(result_put.stdout)
+                if isinstance(put_data, dict) and ("content" in put_data or "commit" in put_data):
+                    print("✅ Successfully synced calculations directly to GitHub knowledge base via curl pipeline!")
+                    if os.path.exists("payload.json"):
+                        os.remove("payload.json")
+                    return True
+                else:
+                    print(f"❌ Gateway transaction rejected: {result_put.stdout}")
+                    return False
+            except json.JSONDecodeError:
+                print(f"❌ Non-JSON gateway content received during put operation: {result_put.stdout}")
                 return False
+        else:
+            print("❌ Received an absolute blank transaction response acknowledgment signal context vector.")
+            return False
     except Exception as put_err:
         print(f"❌ OS pipeline connection transaction failed: {put_err}")
         return False
@@ -143,7 +156,7 @@ def generate_autonomous_math():
 
     elif category == "matrix":
         operation = random.choice(["determinant", "inverse", "eigenvalues"])
-        size = random.choice([2, 3])
+        size = random.choice()
         matrix_data = [[random.randint(-5, 5) for _ in range(size)] for _ in range(size)]
         M = sp.Matrix(matrix_data)
         
