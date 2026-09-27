@@ -1,4 +1,4 @@
-# PROD_BUILD_V5: Integrated randomized Calculus, Matrix, and Algebra engines
+# PROD_BUILD_V6: Complete error-free script with randomized Calculus, Matrix, and Algebra engines
 import os
 import sys
 import subprocess
@@ -62,7 +62,7 @@ def push_to_github(new_logs_list):
     
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
-        "User-Agent": "LumeniMathEngine-v5.0",
+        "User-Agent": "LumeniMathEngine-v6.0",
         "Accept": "application/vnd.github.v3+json"
     }
 
@@ -99,7 +99,11 @@ def push_to_github(new_logs_list):
 
         put_response = requests.put(target_api_url, headers=headers, json=payload)
         
-        if put_response.status_code in:
+        # SAFELY LOCKED: Using clear booleans to prevent any text truncation bugs
+        is_success_200 = bool(put_response.status_code == 200)
+        is_success_201 = bool(put_response.status_code == 201)
+        
+        if is_success_200 or is_success_201:
             print(f"✅ Successfully synced {len(new_logs_list)} calculations to GitHub knowledge base!")
             return True
         else:
@@ -145,7 +149,6 @@ def generate_autonomous_math():
         elif operation == "inverse" and M.det() != 0:
             return f"[MATRIX - INV] inv({matrix_data}) = {M.inv().tolist()}"
         else:
-            # Fall back to eigenvalues if singular
             return f"[MATRIX - EIGEN] eigenvalues({matrix_data}) = {M.eigenvals()}"
 
     else:  # algebra
