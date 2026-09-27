@@ -1,4 +1,4 @@
-# PROD_BUILD_AUTOPILOT_FINAL_V19: Standardized Python HTTP payload sync channel to permanently bypass terminal bugs
+# PROD_BUILD_AUTOPILOT_FINAL_V20: Absolute fallback parameters to force-create missing files
 import os
 import sys
 import subprocess
@@ -42,7 +42,7 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 FILE_PATH = "knowledge_base.txt"
 
 def push_to_github_via_api(new_logs_list):
-    """Updates knowledge_base.txt directly using Python HTTP handshakes, avoiding Render's broken terminal Git settings."""
+    """Updates knowledge_base.txt directly using Python HTTP handshakes with explicit missing file initialization fallbacks."""
     global GITHUB_TOKEN
     if not GITHUB_TOKEN:
         print("❌ BACKGROUND SYNC ERROR: GITHUB_TOKEN environment variable is completely empty or missing on Render!")
@@ -50,20 +50,19 @@ def push_to_github_via_api(new_logs_list):
 
     print(f"🔄 BACKGROUND WORKER: Initializing HTTP payload synchronization for {len(new_logs_list)} items...")
     
-    # Clean static API target link
     target_api_url = "https://github.com"
     clean_token = str(GITHUB_TOKEN).strip()
     
-    # Normalized authorization schema headers for classic PAT tokens
     headers = {
         "Authorization": f"token {clean_token}",
         "Accept": "application/vnd.github.v3+json",
-        "User-Agent": "LumeniCoreEngineApp-v19.0",
+        "User-Agent": "LumeniCoreEngineApp-v20.0",
         "Content-Type": "application/json"
     }
 
     current_sha = None
     current_content = ""
+    is_new_file = False
 
     try:
         # Step 1: Read the existing file content to grab its unique SHA code
@@ -75,9 +74,10 @@ def push_to_github_via_api(new_logs_list):
             current_content = base64.b64decode(file_data.get("content", "")).decode("utf-8")
             print("📂 Located existing tracking database file on GitHub.")
         elif response.status_code == 404 or response.status_code == 406:
-            print("📝 Target file initialization phase active. Preparing safe write context mapping.")
+            print("📝 Target file not found in repository root. Activating initialization fallback logic...")
+            is_new_file = True
         else:
-            print(f"❌ Failed to reach GitHub gateway (Status {response.status_code}): {response.text}")
+            print(f"❌ Failed to reach GitHub gateway during lookup (Status {response.status_code}): {response.text}")
             return False
 
         # Step 2: Append your brand-new advanced math calculations
@@ -96,8 +96,8 @@ def push_to_github_via_api(new_logs_list):
             "branch": "main"
         }
         
-        # Only inject the sha tracking code parameter if the file already exists on GitHub
-        if current_sha is not None:
+        # CRITICAL FIX: Explicitly exclude the SHA dictionary key parameter to force GitHub to create the missing file
+        if not is_new_file and current_sha is not None:
             payload["sha"] = current_sha
 
         # Step 4: Dispatch mutated updates straight to the repository branch endpoint
