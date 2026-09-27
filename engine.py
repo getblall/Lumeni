@@ -1,4 +1,4 @@
-# PROD_BUILD_AUTOPILOT_FINAL_V18: Standardized token schema headers for absolute API conformity
+# PROD_BUILD_AUTOPILOT_FINAL_V19: Fixed new file creation payload formats to eliminate 404 blocks
 import os
 import sys
 import subprocess
@@ -53,27 +53,26 @@ def push_to_github_via_api(new_logs_list):
     target_api_url = "https://github.com"
     clean_token = str(GITHUB_TOKEN).strip()
     
-    # FIXED HEADERS: Switched back to the strict token format schema explicitly required by classic PAT endpoints
     headers = {
         "Authorization": f"token {clean_token}",
-        "User-Agent": "LumeniMathEngineApp-v18.0",
+        "User-Agent": "LumeniMathEngineApp-v19.0",
         "Accept": "application/vnd.github.v3+json",
         "Content-Type": "application/json"
     }
 
+    current_sha = None
+    current_content = ""
+
     try:
         # Step 1: Read the existing file content to grab its unique SHA code
         response = requests.get(target_api_url, headers=headers)
-        current_sha = None
-        current_content = ""
-
+        
         if response.status_code == 200:
             file_data = response.json()
             current_sha = file_data.get("sha")
             current_content = base64.b64decode(file_data.get("content", "")).decode("utf-8")
             print("📂 Located existing tracking database file on GitHub.")
         elif response.status_code == 404 or response.status_code == 406:
-            # Fallback path if the target asset isn't initialized yet
             print("📝 Target file initialization phase active. Preparing safe write context mapping.")
         else:
             print(f"❌ Failed to reach GitHub gateway (Status {response.status_code}): {response.text}")
@@ -94,7 +93,9 @@ def push_to_github_via_api(new_logs_list):
             "content": encoded_content_str,
             "branch": "main"
         }
-        if current_sha:
+        
+        # FIXED: Only inject the sha parameter tracking marker block if it physically exists
+        if current_sha is not None:
             payload["sha"] = current_sha
 
         # Step 4: Dispatch mutated updates straight to the repository branch endpoint
