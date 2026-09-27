@@ -1,4 +1,4 @@
-# PROD_BUILD_V3: Renamed to clear GitHub environment action caching
+# PROD_BUILD_V4: Standardized GitHub API payload formatting parameters
 import os
 import sys
 import subprocess
@@ -57,16 +57,13 @@ def push_to_github(new_logs_list):
         print("❌ Sync aborted: GITHUB_TOKEN environment variable is completely empty/missing.")
         return False
 
-    # Broken down cleanly across multiple additions to prevent any truncation strings from dropping data
-    domain = "https://github.com"
-    path = "/repos/getblall/Lumeni/contents/knowledge_base.txt"
-    target_api_url = domain + path
+    target_api_url = "https://api.github.com/repos/getblall/Lumeni/contents/knowledge_base.txt"
     
+    # Restored standard GitHub API version header blocks
     headers = {
-        "Authorization": f"Bearer {GITHUB_TOKEN}",
-        "User-Agent": "LumeniMathEngine-v3.0",
-        "Accept": "application/vnd.github.v3+json",
-        "Content-Type": "application/json"
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "User-Agent": "LumeniMathEngine-v4.0",
+        "Accept": "application/vnd.github.v3+json"
     }
 
     print(f"🔄 Actively targeting URL vector destination: {target_api_url}")
@@ -91,12 +88,16 @@ def push_to_github(new_logs_list):
         # 2. Append the batch of new math calculations
         log_string = "\n".join(new_logs_list)
         updated_content = current_content + "\n" + log_string if current_content else log_string
-        encoded_content = base64.b64encode(updated_content.encode("utf-8")).decode("utf-8")
+        
+        # Explicit base64 string handling block
+        utf8_encoded = updated_content.encode("utf-8")
+        base64_bytes = base64.b64encode(utf8_encoded)
+        encoded_content_str = base64_bytes.decode("utf-8")
 
-        # 3. Commit changes back to the repository
+        # 3. Commit changes back to the repository using explicit json fields
         payload = {
-            "message": f"🤖 Lumeni Sync: Batched {len(new_logs_list)} autonomous calculations",
-            "content": encoded_content,
+            "message": "🤖 Lumeni Sync: Batched autonomous calculations",
+            "content": encoded_content_str,
             "branch": BRANCH
         }
         if current_sha:
