@@ -3,13 +3,13 @@ name: Autonomous AI Learning Loop
 on:
   schedule:
     - cron: '*/15 * * * *'
-  workflow_dispatch: # Allows you to manually trigger the loop using a button on GitHub
+  workflow_dispatch: 
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Grants the container absolute write/commit permission access
+      contents: write 
     steps:
       - name: Checkout repository files
         uses: actions/checkout@v4
@@ -26,5 +26,5 @@ jobs:
 
       - name: Execute Autonomous Math Compiler
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Explicitly maps the token for python access
-        run: python bot.py
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+        run: python engine.py  # 👈 CHANGED FROM bot.py TO engine.py
