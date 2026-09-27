@@ -1,4 +1,4 @@
-# PROD_BUILD_FINAL: Standardized calculations with robust exception mapping
+# PROD_BUILD_V8: Fixed matrix choice array sequencing and optimized header fallback vectors
 import os
 import sys
 import subprocess
@@ -60,15 +60,23 @@ def push_to_github(new_logs_list):
 
     target_api_url = "https://github.com"
     
+    # Standardized headers with clean tracking tokens
     headers = {
-        "Authorization": f"Bearer {GITHUB_TOKEN}",
-        "User-Agent": "LumeniMathEngine-FINAL",
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "User-Agent": "LumeniMathEngine-v8.0",
         "Accept": "application/vnd.github.v3+json"
     }
 
     try:
         # 1. Fetch current file to get its content and unique SHA blob
         response = requests.get(target_api_url, headers=headers)
+        
+        # Automatic 406 token validation fallback loop
+        if response.status_code == 406:
+            print("🔄 Status 406 encountered. Retrying with Bearer header schema token mapping...")
+            headers["Authorization"] = f"Bearer {GITHUB_TOKEN}"
+            response = requests.get(target_api_url, headers=headers)
+
         current_sha = None
         current_content = ""
 
@@ -76,6 +84,7 @@ def push_to_github(new_logs_list):
             file_data = response.json()
             current_sha = file_data["sha"]
             current_content = base64.b64decode(file_data["content"]).decode("utf-8")
+            print("📂 Found existing knowledge_base.txt file. Appending records...")
         elif response.status_code == 404:
             print("📝 Initializing a fresh target file.")
         else:
@@ -139,14 +148,14 @@ def generate_autonomous_math():
 
     elif category == "matrix":
         operation = random.choice(["determinant", "inverse", "eigenvalues"])
-        size = random.choice()
+        # FIXED SELECTION ARRAY DIMENSIONS (2x2 or 3x3 matrices)
+        size = random.choice([2, 3])
         matrix_data = [[random.randint(-5, 5) for _ in range(size)] for _ in range(size)]
         M = sp.Matrix(matrix_data)
         
         if operation == "determinant":
             return f"[MATRIX - DET] det({matrix_data}) = {M.det()}"
         elif operation == "inverse" and M.det() != 0:
-            # FIXED LINE: Executed evaluation function wrapper cleanly to map list structures
             return f"[MATRIX - INV] inv({matrix_data}) = {M.inv().tolist()}"
         else:
             return f"[MATRIX - EIGEN] eigenvalues({matrix_data}) = {M.eigenvals()}"
