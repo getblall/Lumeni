@@ -1,4 +1,4 @@
-# PROD_BUILD_AUTOPILOT_FINAL_V2: Standardized repository paths to fix malformed Git push URLs
+# PROD_BUILD_AUTOPILOT_FINAL_V3: Isolated Token Header to bypass Render String Truncation
 import os
 import sys
 import subprocess
@@ -33,10 +33,10 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 FILE_PATH = "knowledge_base.txt"
 
 def push_to_github_via_git(new_logs_list):
-    """Appends logs locally and uses native Git commands with a token to push to GitHub, bypassing all API gateway errors."""
+    """Appends logs locally and uses native Git commands with an extra header token to completely bypass URL formatting bugs."""
     global GITHUB_TOKEN
     if not GITHUB_TOKEN:
-        print("❌ BACKGROUND SYNC ERROR: GITHUB_TOKEN environment variable is missing on Render!")
+        print("❌ BACKGROUND SYNC ERROR: GITHUB_TOKEN environment variable is completely empty or missing on Render!")
         return False
 
     print(f"🔄 BACKGROUND WORKER: Initializing native Git tree synchronization sequence for {len(new_logs_list)} items...")
@@ -59,15 +59,28 @@ def push_to_github_via_git(new_logs_list):
         commit_msg = f"🤖 Lumeni Sync: Batched {len(new_logs_list)} autonomous calculations"
         subprocess.run(["git", "commit", "-m", commit_msg], check=True, capture_output=True)
 
-        # 5. Authenticate and push securely straight to the repository tree main branch
-        # FIXED: Explicitly hardcoded the username and repository slug to prevent malformed text mapping links
+        # 5. SAFE PUSH: Inject the authentication token as an explicit base64 header value block
+        # This bypasses the f-string URL interpolation error completely
         clean_token = str(GITHUB_TOKEN).strip()
-        remote_url = f"https://{clean_token}@://github.com"
+        auth_bytes = f"x-access-token:{clean_token}".encode('utf-8')
+        auth_base64 = base64.b64encode(auth_bytes).decode('utf-8')
         
+        # Inject the credentials directly into the local repository context runner settings
+        subprocess.run([
+            "git", "config", 
+            "http.https://github.com", 
+            f"Authorization: Basic {auth_base64}"
+        ], check=True)
+
+        # Execute push to the standard public path destination
+        remote_url = "https://github.com"
         result_push = subprocess.run(["git", "push", remote_url, "HEAD:main"], capture_output=True, text=True)
 
+        # Clean up the extra header from local memory configuration instantly for security
+        subprocess.run(["git", "config", "--unset", "http.https://github.com"])
+
         if result_push.returncode == 0:
-            print("✅ BACKGROUND WORKER SUCCESS: SUCCESSFULLY SYNCED BATCH GENERATIONS TO GITHUB VIA NATIVE PUSH!")
+            print("✅ BACKGROUND WORKER SUCCESS: SUCCESSFULLY SYNCED BATCH GENERATIONS TO GITHUB VIA ISOLATED PUSH!")
             return True
         else:
             print(f"❌ BACKGROUND SYNC REJECTED BY GITHUB: {result_push.stderr}")
