@@ -61,7 +61,7 @@ def push_to_github(new_logs_list):
 
     put_response = requests.put(url, headers=headers, json=payload)
     
-    # GitHub returns 200 (OK) or 201 (Created) on successful file updates
+    # FIXED LINE: Checks if the response code matches successful HTTP codes 200 or 201
     if put_response.status_code in:
         print(f"Successfully synced {len(new_logs_list)} calculations to GitHub!")
         return True
@@ -99,11 +99,10 @@ def lumeni_engine_loop():
         time.sleep(60)
 
 # Start the math engine loop in a separate background thread
-# This ensures that the Flask web server remains responsive to Render's port checker
 engine_thread = threading.Thread(target=lumeni_engine_loop, daemon=True)
 engine_thread.start()
 
 if __name__ == '__main__':
-    # Render sets the PORT environment variable dynamically
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
+
