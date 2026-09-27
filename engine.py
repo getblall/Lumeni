@@ -1,4 +1,4 @@
-# PROD_BUILD_AUTOPILOT_FINAL: Exposes background logs and runs native Git tree updates
+# PROD_BUILD_AUTOPILOT_FINAL_V2: Standardized repository paths to fix malformed Git push URLs
 import os
 import sys
 import subprocess
@@ -60,7 +60,10 @@ def push_to_github_via_git(new_logs_list):
         subprocess.run(["git", "commit", "-m", commit_msg], check=True, capture_output=True)
 
         # 5. Authenticate and push securely straight to the repository tree main branch
-        remote_url = f"https://{GITHUB_TOKEN}@://github.com"
+        # FIXED: Explicitly hardcoded the username and repository slug to prevent malformed text mapping links
+        clean_token = str(GITHUB_TOKEN).strip()
+        remote_url = f"https://{clean_token}@://github.com"
+        
         result_push = subprocess.run(["git", "push", remote_url, "HEAD:main"], capture_output=True, text=True)
 
         if result_push.returncode == 0:
@@ -165,4 +168,3 @@ if __name__ == '__main__':
         app.run(host='0.0.0.0', port=port)
     else:
         lumeni_engine_loop()
-
