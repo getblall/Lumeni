@@ -1,11 +1,27 @@
 import os
+import sys
+import subprocess
+
+# Dynamically force-install missing core dependencies inside the runner environment
+try:
+    import requests
+except ImportError:
+    print("Core dependency 'requests' missing. Installing automatically...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
+    import requests
+
+try:
+    import sympy as sp
+except ImportError:
+    print("Core dependency 'sympy' missing. Installing automatically...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "sympy"])
+    import sympy as sp
+
 import base64
 import time
 import threading
-import sympy as sp
-import requests
 
-# Dynamically handle Flask if it is missing from the local environment
+# Dynamically handle Flask (Only required on Render, completely optional for GitHub Actions)
 try:
     from flask import Flask
     HAS_FLASK = True
@@ -13,7 +29,7 @@ except ImportError:
     HAS_FLASK = False
     print("Flask module not detected. Proceeding in headless compiler mode...")
 
-# Initialize Flask only if the library is physically available (e.g., on Render)
+# Initialize Flask only if it is available
 if HAS_FLASK:
     app = Flask(__name__)
 
