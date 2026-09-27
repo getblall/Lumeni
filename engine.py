@@ -1,4 +1,4 @@
-# PROD_BUILD_PERSISTENT_FINAL: Added exact counting context headers to display live dashboard metrics
+# PROD_BUILD_PERSISTENT_FINAL_V2: Complete unified engine file with verified block alignments
 import os
 import sys
 import subprocess
@@ -6,7 +6,7 @@ import random
 import time
 import threading
 
-# Force install standard network components if missing inside the host environment
+# Force install standard network components if missing inside the host machine
 try:
     import sympy as sp
 except ImportError:
@@ -61,7 +61,6 @@ if HAS_FLASK:
         total_logs = 0
         if SUPABASE_URL and SUPABASE_KEY:
             try:
-                # FIXED ENDPOINT: Added the explicit head range and exact parameters to map counts cleanly
                 query_url = f"{SUPABASE_URL.strip('/')}/rest/v1/math_logs?select=id"
                 headers = {
                     "apikey": SUPABASE_KEY, 
@@ -71,11 +70,9 @@ if HAS_FLASK:
                 }
                 res = requests.get(query_url, headers=headers)
                 
-                # Read the total count directly from the safe Content-Range header cell response
                 if "Content-Range" in res.headers:
                     total_logs = res.headers["Content-Range"].split("/")[-1]
                 else:
-                    # Fallback fallback check layer context tracker
                     query_url_alt = f"{SUPABASE_URL.strip('/')}/rest/v1/math_logs"
                     headers_alt = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
                     res_alt = requests.get(query_url_alt, headers=headers_alt)
@@ -115,7 +112,7 @@ if HAS_FLASK:
                 return Response(
                     text_content,
                     mimetype="text/plain",
-                    headers={f"Content-Disposition": "attachment;filename=knowledge_base.txt"}
+                    headers={{"Content-Disposition": "attachment;filename=knowledge_base.txt"}}
                 )
         except Exception as e:
             return f"Error building database data stream: {e}", 500
@@ -139,7 +136,6 @@ def save_to_supabase(new_logs_list):
     
     try:
         response = requests.post(write_url, headers=headers, json=payload)
-        
         status_string = str(response.status_code).strip()
         
         if status_string == "200" or status_string == "201":
@@ -241,3 +237,4 @@ if __name__ == '__main__':
         port = int(os.environ.get("PORT", 5000))
         app.run(host='0.0.0.0', port=port)
     else:
+        lumeni_engine_loop()
