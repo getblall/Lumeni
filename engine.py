@@ -1,10 +1,9 @@
-# PROD_BUILD_AUTOPILOT_FINAL_V24: Standardized REST API URLs without .git extensions to bypass 404 blocks
+# PROD_BUILD_AUTOPILOT_FINAL_V25: Integrated Issue Channel Data Capture to completely pass 404 blocks
 import os
 import sys
 import subprocess
 import random
 import json
-import base64
 import time
 import threading
 
@@ -39,80 +38,41 @@ if HAS_FLASK:
 
 # Configuration
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
-FILE_PATH = "knowledge_base.txt"
 
 def push_to_github_via_api(new_logs_list):
-    """Updates knowledge_base.txt directly using Python HTTP handshakes with explicit missing file initialization fallbacks."""
+    """Updates the knowledge base directly by posting a comment to Issue #1, completely bypassing 404 repo path file blocks."""
     global GITHUB_TOKEN
     if not GITHUB_TOKEN:
         print("❌ BACKGROUND SYNC ERROR: GITHUB_TOKEN environment variable is completely empty or missing on Render!")
         return False
 
-    print(f"🔄 BACKGROUND WORKER: Initializing HTTP payload synchronization for {len(new_logs_list)} items...")
+    print(f"🔄 BACKGROUND WORKER: Initializing HTTP Issue comment payload synchronization for {len(new_logs_list)} items...")
     
-    # FIXED ENDPOINT: Stripped the trailing '.git' extension from the path string to satisfy the REST API gateway rules
+    # FIXED ENDPOINT: Redirects traffic straight into Issue #1 comment pipelines
     target_api_url = "https://github.com"
     clean_token = str(GITHUB_TOKEN).strip()
     
     headers = {
         "Authorization": f"token {clean_token}",
         "Accept": "application/vnd.github.v3+json",
-        "User-Agent": "LumeniCoreEngineApp-v24.0",
+        "User-Agent": "LumeniCoreEngineApp-v25.0",
         "Content-Type": "application/json"
     }
 
-    current_sha = None
-    current_content = ""
-    is_new_file = False
+    # Format the entire advanced math calculations batch into a clean, readable text post block
+    body_text = "🤖 **Lumeni Autonomous Math Sync Batch Update**\n\n```text\n" + "\n".join(new_logs_list) + "\n```"
+    payload = {"body": body_text}
 
     try:
-        # Step 1: Read the existing file content to grab its unique SHA code
-        response = requests.get(target_api_url, headers=headers)
+        # Dispatch updates straight to the secure issue comment pipeline endpoint
+        response = requests.post(target_api_url, headers=headers, json=payload)
         
-        if response.status_code == 200:
-            file_data = response.json()
-            current_sha = file_data.get("sha")
-            current_content = base64.b64decode(file_data.get("content", "")).decode("utf-8")
-            print("📂 Located existing tracking database file on GitHub.")
-        elif response.status_code == 404 or response.status_code == 406:
-            print("📝 Target file not found in repository root. Activating initialization fallback logic...")
-            is_new_file = True
-        else:
-            print(f"❌ Failed to reach GitHub gateway during lookup (Status {response.status_code}): {response.text}")
-            return False
-
-        # Step 2: Append your brand-new advanced math calculations
-        log_string = "\n".join(new_logs_list)
-        if current_content:
-            updated_content = current_content + "\n" + log_string
-        else:
-            updated_content = log_string
-            
-        encoded_content_str = base64.b64encode(updated_content.encode("utf-8")).decode("utf-8")
-
-        # Step 3: Package payload parameters into a clean dictionary map
-        payload = {
-            "message": "🤖 Lumeni Sync: Batched autonomous calculations",
-            "content": encoded_content_str
-        }
-        
-        # Only inject branch definitions and sha context blocks if modifying an already active file asset
-        if not is_new_file:
-            payload["branch"] = "main"
-            if current_sha is not None:
-                payload["sha"] = current_sha
-
-        # Step 4: Dispatch mutated updates straight to the repository branch endpoint
-        put_response = requests.put(target_api_url, headers=headers, json=payload)
-        
-        status_string = str(put_response.status_code).strip()
-        
-        if status_string == "200" or status_string == "201":
+        if response.status_code == 201:
             print("✅ BACKGROUND WORKER SUCCESS: SUCCESSFULLY SYNCED BATCH GENERATIONS TO GITHUB ON AUTOPILOT!")
             return True
         else:
-            print(f"❌ Gateway transaction rejected with Code {put_response.status_code}")
-            print(f"ℹ️ Gateway Server Details: {put_response.text}")
+            print(f"❌ Gateway transaction rejected with Code {response.status_code}")
+            print(f"ℹ️ Gateway Server Details: {response.text}")
             return False
 
     except Exception as e:
