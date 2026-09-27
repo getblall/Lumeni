@@ -1,4 +1,4 @@
-# PROD_BUILD_AUTOPILOT_FINAL_V16: Standardized Python HTTP payload sync channel
+# PROD_BUILD_AUTOPILOT_FINAL_V17: Added custom headers and Bearer auth schemas to permanently bypass 406 gateway blocks
 import os
 import sys
 import subprocess
@@ -42,7 +42,7 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 FILE_PATH = "knowledge_base.txt"
 
 def push_to_github_via_api(new_logs_list):
-    """Updates knowledge_base.txt directly using Python HTTP handshakes, avoiding Render's broken terminal Git settings."""
+    """Updates knowledge_base.txt directly using Python HTTP handshakes with standard User-Agent headers."""
     global GITHUB_TOKEN
     if not GITHUB_TOKEN:
         print("❌ BACKGROUND SYNC ERROR: GITHUB_TOKEN environment variable is completely empty or missing on Render!")
@@ -50,13 +50,15 @@ def push_to_github_via_api(new_logs_list):
 
     print(f"🔄 BACKGROUND WORKER: Initializing HTTP payload synchronization for {len(new_logs_list)} items...")
     
-    # Static API endpoint link
     target_api_url = "https://github.com"
+    clean_token = str(GITHUB_TOKEN).strip()
     
+    # FIXED HEADERS: Switched completely to Bearer token schema format and explicitly declared an active User-Agent
     headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
+        "Authorization": f"Bearer {clean_token}",
+        "User-Agent": "LumeniMathEngine-v17.0",
         "Accept": "application/vnd.github.v3+json",
-        "User-Agent": "LumeniCoreEngineApp-v16.0"
+        "Content-Type": "application/json"
     }
 
     try:
