@@ -1,4 +1,4 @@
-# PROD_BUILD_AUTOPILOT_FINAL_V9: Utilizing pre-authenticated repository remote tracking
+# PROD_BUILD_AUTOPILOT_FINAL_V11: Custom remote tracking allocation to bypass missing origin blocks
 import os
 import sys
 import subprocess
@@ -33,7 +33,7 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 FILE_PATH = "knowledge_base.txt"
 
 def push_to_github_via_git(new_logs_list):
-    """Appends logs locally and uses native Git commands with an environmental token injection to bypass URL formatting bugs."""
+    """Appends logs locally and uses native Git commands with a temporary custom remote to bypass all destination bugs."""
     global GITHUB_TOKEN
     if not GITHUB_TOKEN:
         print("❌ BACKGROUND SYNC ERROR: GITHUB_TOKEN environment variable is completely empty or missing on Render!")
@@ -59,20 +59,28 @@ def push_to_github_via_git(new_logs_list):
         commit_msg = f"🤖 Lumeni Sync: Batched {len(new_logs_list)} autonomous calculations"
         subprocess.run(["git", "commit", "-m", commit_msg], check=True, capture_output=True)
 
-        # 5. FIXED ABSOLUTE SYNC ENGINE: Re-authenticates the existing 'origin' path natively
-        # This injects the secure secret token context behind the scenes without rewriting the text URL address.
+        # 5. FIXED CUSTOM REMOTE ALLOCATION SYSTEM:
+        # Constructs a temporary remote name 'autopilot' to circumvent Render's missing 'origin' tracking blocks
         clean_token = str(GITHUB_TOKEN).strip()
-        authenticated_origin_url = f"https://x-access-token:{clean_token}@://github.com"
         
-        # Override origin's internal routing reference safely to bind the write permission token
-        subprocess.run(["git", "remote", "set-url", "origin", authenticated_origin_url], check=True)
+        prefix_string = "https://"
+        auth_string = "x-access-token:" + clean_token + "@"
+        base_domain = "://github.com"
+        repo_slug_path = "getblall/Lumeni.git"
+        
+        authenticated_url = prefix_string + auth_string + base_domain + repo_slug_path
+        
+        # Safely remove 'autopilot' if it somehow stuck around from a previous crash
+        subprocess.run(["git", "remote", "remove", "autopilot"], capture_output=True)
+        
+        # Explicitly add our custom remote tracking vector path directly
+        subprocess.run(["git", "remote", "add", "autopilot", authenticated_url], check=True)
 
-        # Execute push targeting the clean static remote origin structure directly
-        result_push = subprocess.run(["git", "push", "origin", "main"], capture_output=True, text=True)
+        # Execute push targeting the custom tracking remote natively straight to the main branch
+        result_push = subprocess.run(["git", "push", "autopilot", "HEAD:main"], capture_output=True, text=True)
 
-        # Immediately restore origin back to standard tracking configuration layout for safety
-        fallback_clean_url = "https://://github.com"
-        subprocess.run(["git", "remote", "set-url", "origin", fallback_clean_url], check=True)
+        # Clean up and destroy the temporary remote immediately after push for security
+        subprocess.run(["git", "remote", "remove", "autopilot"], capture_output=True)
 
         if result_push.returncode == 0:
             print("✅ BACKGROUND WORKER SUCCESS: SUCCESSFULLY SYNCED BATCH GENERATIONS TO GITHUB ON AUTOPILOT!")
