@@ -61,8 +61,11 @@ def push_to_github(new_logs_list):
 
     put_response = requests.put(url, headers=headers, json=payload)
     
-    # FIXED LINE: Checks if the response code matches successful HTTP codes 200 or 201
-    if put_response.status_code in:
+    # Alternative direct checking logic to guarantee zero compiler text truncation
+    is_success_200 = bool(put_response.status_code == 200)
+    is_success_201 = bool(put_response.status_code == 201)
+    
+    if is_success_200 or is_success_201:
         print(f"Successfully synced {len(new_logs_list)} calculations to GitHub!")
         return True
     else:
@@ -105,4 +108,3 @@ engine_thread.start()
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
-
