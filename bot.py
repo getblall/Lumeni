@@ -37,8 +37,8 @@ if HAS_FLASK:
     def home():
         return "Lumeni Engine is fully operational and syncing on autopilot.", 200
 
-# GitHub Configuration (Uses environment variables for security)
-GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
+# GitHub Configuration (Pulls default fallback token structures dynamically)
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN") or os.environ.get("INPUT_GITHUB_TOKEN")
 GITHUB_REPO = "getblall/Lumeni"
 FILE_PATH = "knowledge_base.txt"
 BRANCH = "main"
@@ -48,8 +48,11 @@ IS_GITHUB_ACTION = os.environ.get("GITHUB_ACTIONS") == "true"
 
 def push_to_github(new_logs_list):
     """Fetches knowledge_base.txt, appends new logs, and commits back to GitHub."""
+    global GITHUB_TOKEN
+    
     if not GITHUB_TOKEN:
-        print("Sync aborted: GITHUB_TOKEN environment variable is missing.")
+        print("❌ Sync aborted: GITHUB_TOKEN environment variable is completely empty/missing.")
+        print("Please ensure your workflow file passes the token under 'env: GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}'")
         return False
 
     url = f"https://github.com{GITHUB_REPO}/contents/{FILE_PATH}"
@@ -57,6 +60,8 @@ def push_to_github(new_logs_list):
         "Authorization": f"token {GITHUB_TOKEN}",
         "Accept": "application/vnd.github.v3+json"
     }
+
+    print(f"🔄 Attempting to sync {len(new_logs_list)} records to {GITHUB_REPO}/{FILE_PATH}...")
 
     # 1. Fetch current file to get its content and unique SHA blob
     response = requests.get(url, headers=headers)
@@ -67,15 +72,16 @@ def push_to_github(new_logs_list):
         file_data = response.json()
         current_sha = file_data["sha"]
         current_content = base64.b64decode(file_data["content"]).decode("utf-8")
+        print("📂 Found existing knowledge_base.txt file. Appending records...")
     elif response.status_code == 404:
-        print("knowledge_base.txt not found on GitHub. Creating a fresh file.")
+        print("📝 knowledge_base.txt not found on GitHub. Initializing a fresh target file.")
     else:
-        print(f"Failed to fetch from GitHub (Status {response.status_code}): {response.text}")
+        print(f"❌ Failed to fetch from GitHub (Status {response.status_code}): {response.text}")
         return False
 
     # 2. Append the batch of new math calculations
     log_string = "\n".join(new_logs_list)
-    updated_content = current_content + "\n" + log_string
+    updated_content = current_content + "\n" + log_string if current_content else log_string
     encoded_content = base64.b64encode(updated_content.encode("utf-8")).decode("utf-8")
 
     # 3. Commit changes back to the repository
@@ -93,43 +99,46 @@ def push_to_github(new_logs_list):
     is_success_201 = bool(put_response.status_code == 201)
     
     if is_success_200 or is_success_201:
-        print(f"Successfully synced {len(new_logs_list)} calculations to GitHub!")
+        print(f"✅ Successfully synced {len(new_logs_list)} calculations to GitHub knowledge base!")
         return True
     else:
-        print(f"Failed to commit to GitHub (Status {put_response.status_code}): {put_response.text}")
+        print(f"❌ Failed to commit to GitHub (Status {put_response.status_code}): {put_response.text}")
         return False
 
 def lumeni_engine_loop():
     """Generates math logs and batch syncs them to GitHub."""
     print("Lumeni SymPy Engine initiated...")
-    while True:
-        batch_logs = []
-        
-        # Run a burst cycle to collect ~15 clean calculations
-        for _ in range(15):
-            try:
-                # --- Advanced Math Generation via SymPy ---
-                x = sp.Symbol('x')
-                expr = x**2 + 3*x + 2
-                diff_expr = sp.diff(expr, x)
-                log_entry = f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] f(x)={expr} | f'(x)={diff_expr}"
-                # -------------------------------------------
-                
-                batch_logs.append(log_entry)
-                time.sleep(1)  # Sped up processing pace slightly for faster execution
-            except Exception as e:
-                print(f"Engine Error: {e}")
+    batch_logs = []
+    
+    # Run a burst cycle to collect ~15 clean calculations
+    print("🔢 Commencing autonomous math compilation window...")
+    for i in range(15):
+        try:
+            x = sp.Symbol('x')
+            expr = x**2 + 3*x + 2
+            diff_expr = sp.diff(expr, x)
+            log_entry = f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] f(x)={expr} | f'(x)={diff_expr}"
+            
+            batch_logs.append(log_entry)
+            print(f"   [Math Log {i+1}/15 Generated Successfully]")
+            time.sleep(0.5) 
+        except Exception as e:
+            print(f"⚠️ Engine Processing Exception: {e}")
 
-        # Sync the entire batch to GitHub
-        if batch_logs:
-            push_to_github(batch_logs)
-            
-        # ENVIRONMENT CHECK: If running as a GitHub Action workflow, close cleanly instead of looping infinitely
-        if IS_GITHUB_ACTION:
-            print("GitHub Action processing loop complete. Exiting cleanly.")
-            sys.exit(0)
-            
-        print("Window completed. Pausing engine...")
+    # Sync the entire batch to GitHub
+    if batch_logs:
+        push_to_github(batch_logs)
+    else:
+        print("⚠️ Sync skipped: No clean calculations were generated during this run.")
+        
+    # ENVIRONMENT CHECK: If running as a GitHub Action workflow, close cleanly instead of looping infinitely
+    if IS_GITHUB_ACTION:
+        print("🏁 GitHub Action processing loop complete. Exiting cleanly.")
+        sys.exit(0)
+        
+    # Standard 24/7 looping process for Render service deployment
+    while True:
+        print("Window completed. Pausing engine loop process...")
         time.sleep(60)
 
 # Start execution depending on environment type (Render vs GitHub Actions)
