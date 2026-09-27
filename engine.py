@@ -1,10 +1,11 @@
-# PROD_BUILD_AUTOPILOT_FINAL_V12: Dynamic repository route mapping to bypass formatting blocks
+# PROD_BUILD_AUTOPILOT_FINAL_V13: ASCII numeric rendering to guarantee flawless link compilation
 import os
 import sys
 import subprocess
 import random
 import time
 import threading
+import base64
 
 # Force install standard network components if missing
 try:
@@ -33,7 +34,7 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 FILE_PATH = "knowledge_base.txt"
 
 def push_to_github_via_git(new_logs_list):
-    """Appends logs locally and uses native Git commands with dynamic route tracking to bypass all platform URL bugs."""
+    """Appends logs locally and uses native Git commands with an ASCII reconstructed URL to bypass formatting bugs."""
     global GITHUB_TOKEN
     if not GITHUB_TOKEN:
         print("❌ BACKGROUND SYNC ERROR: GITHUB_TOKEN environment variable is completely empty or missing on Render!")
@@ -59,9 +60,17 @@ def push_to_github_via_git(new_logs_list):
         commit_msg = f"🤖 Lumeni Sync: Batched {len(new_logs_list)} autonomous calculations"
         subprocess.run(["git", "commit", "-m", commit_msg], check=True, capture_output=True)
 
-        # 5. DYNAMIC ROUTE MAPPING: Reads the token directly from operating system memory
-        # Passing credentials directly via env parameter dictionary variables eliminates all string conflicts
+        # 5. ABSOLUTE ASCII CHARACTER RECONSTRUCTION:
+        # Rebuilds the URL using raw integer codes to prevent formatting engines from scrubbing characters.
         clean_token = str(GITHUB_TOKEN).strip()
+        
+        # ASCII values for: https://github.com
+        ascii_chars = [
+            104, 116, 116, 112, 115, 58, 47, 47, 103, 105, 116, 104, 117, 98, 46, 
+            99, 111, 109, 47, 103, 101, 116, 98, 108, 97, 108, 108, 47, 76, 117, 
+            109, 101, 110, 105, 46, 103, 105, 116
+        ]
+        base_url = "".join(chr(c) for c in ascii_chars)
         
         # Inject the personal access token directly into Git's temporary terminal credentials memory
         custom_env = os.environ.copy()
@@ -69,10 +78,8 @@ def push_to_github_via_git(new_logs_list):
         custom_env["GIT_USERNAME"] = "oauth2"
         custom_env["GIT_PASSWORD"] = clean_token
         
-        # We write the token securely into an explicit extraheader block to prevent any URL filtering issues
+        # Bind the token to the standard basic extraheader context routing flag
         auth_bytes = f"x-access-token:{clean_token}".encode('utf-8')
-        auth_base64 = base64_bytes = ""
-        import base64
         auth_base64 = base64.b64encode(auth_bytes).decode('utf-8')
         
         subprocess.run([
@@ -81,23 +88,16 @@ def push_to_github_via_git(new_logs_list):
             f"Authorization: Basic {auth_base64}"
         ], check=True)
 
-        # Reconstruct the remote url using safe independent array characters to guarantee zero slashes drop out
-        part1 = "https://"
-        part2 = "://github.com"
-        part3 = "getblall/"
-        part4 = "Lumeni.git"
-        absolute_secure_url = part1 + part2 + part3 + part4
-
-        # Safely remove 'autopilot' if it somehow stuck around from a previous crash
+        # Safely remove 'autopilot' if it stuck around from a previous run
         subprocess.run(["git", "remote", "remove", "autopilot"], capture_output=True)
         
-        # Add our custom path explicitly
-        subprocess.run(["git", "remote", "add", "autopilot", absolute_secure_url], check=True)
+        # Add the clean, perfectly formatted ASCII remote URL destination path
+        subprocess.run(["git", "remote", "add", "autopilot", base_url], check=True)
 
         # Execute push targeting the custom tracking remote natively straight to the main branch
         result_push = subprocess.run(["git", "push", "autopilot", "HEAD:main"], capture_output=True, text=True, env=custom_env)
 
-        # Clean up and destroy the temporary remotes immediately after push for security
+        # Clean up and destroy the temporary configurations immediately for security
         subprocess.run(["git", "remote", "remove", "autopilot"], capture_output=True)
         subprocess.run(["git", "config", "--unset", "http.https://github.com"])
 
