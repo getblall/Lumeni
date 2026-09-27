@@ -1,4 +1,4 @@
-\# PROD_BUILD_V9: Re-engineered connection using OS system level curl pipelines
+# PROD_BUILD_V9: Re-engineered connection using OS system level curl pipelines
 import os
 import sys
 import subprocess
