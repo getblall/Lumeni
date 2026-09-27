@@ -1,4 +1,4 @@
-# PROD_BUILD_AUTOPILOT_V15: Exposes background logs to the console and uses native Git trees
+# PROD_BUILD_AUTOPILOT_FINAL: Exposes background logs and runs native Git tree updates
 import os
 import sys
 import subprocess
@@ -133,7 +133,6 @@ def lumeni_engine_loop():
     """Generates advanced math logs and batch syncs them to GitHub."""
     print("Lumeni SymPy Engine initiated...")
     
-    # Run the loop every 60 seconds for fast deployment confirmation
     while True:
         batch_logs = []
         print("🔢 BACKGROUND WORKER: Commencing autonomous math compilation window...")
@@ -159,12 +158,11 @@ def lumeni_engine_loop():
 
 if __name__ == '__main__':
     if HAS_FLASK:
-        # Start the background task worker loop thread instantly
         engine_thread = threading.Thread(target=lumeni_engine_loop, daemon=True)
         engine_thread.start()
         
-        # Fire up Flask immediately on Render to stay online
         port = int(os.environ.get("PORT", 5000))
         app.run(host='0.0.0.0', port=port)
     else:
         lumeni_engine_loop()
+
