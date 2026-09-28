@@ -183,6 +183,7 @@ def dashboard_home():
 def stream_download_knowledge_base():
     """Streams the complete cloud database history to the client browser text console."""
     endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
+    
     try:
         response = requests.get(endpoint, headers=HEADERS)
         if response.status_code != 200:
