@@ -54,8 +54,7 @@ def generate_math_assertion():
             det = M.det()
             return f"Linear Algebra Matrix: The determinant of 2x2 matrix {M.tolist()} is equal to {det}."
         else:
-            # Guarantee invertible matrix by picking simple identity skew
-            M = sp.Matrix([[1, random.randint(1, 3)],])
+            M = sp.Matrix([[1, random.randint(1, 3)], [0, 1]])
             M_inv = M.inv()
             return f"Linear Algebra Matrix: The inverse of matrix {M.tolist()} is equal to {M_inv.tolist()}."
             
@@ -86,10 +85,7 @@ def background_math_engine_loop():
                 assertion_string = generate_math_assertion()
                 payload_batch.append({"assertion": assertion_string})
             
-            # Post directly into the database via REST pipeline
             response = requests.post(endpoint, headers=HEADERS, json=payload_batch)
-            
-            # Use direct equality check to bypass any list parsing error entirely
             if response.status_code == 201:
                 print(f"[SYSTEM ENGINE] Batch processing successful! 15 assertions appended to cloud storage.", flush=True)
             else:
@@ -112,7 +108,6 @@ def dashboard_home():
     """Queries public headers to present global state metrics on the live screen."""
     endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
     
-    # Custom low-overhead headers tracking exact PostgreSQL counts without dataset payloads
     count_headers = {
         **HEADERS,
         "Prefer": "count=exact",
@@ -123,7 +118,6 @@ def dashboard_home():
         response = requests.get(endpoint, headers=count_headers)
         content_range = response.headers.get("Content-Range", "")
         
-        # Parse standard '0-0/COUNT' structure from Content-Range response
         if "/" in content_range:
             total_assertions = content_range.split("/")[-1]
         else:
@@ -133,7 +127,6 @@ def dashboard_home():
         print(f"[WEB ERROR] Failed to fetch total record schema estimations: {e}", flush=True)
         total_assertions = "Error Connecting"
 
-    # Clean HTML Dashboard markup mimicking custom OS monitoring layout terminal
     html_layout = f"""
     <!DOCTYPE html>
     <html>
@@ -168,14 +161,9 @@ def stream_download_knowledge_base():
     """Streams the complete cloud database history to the client browser text console."""
     endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
     
-    # Requesting all data rows explicitly select text value column matching records
-    fetch_headers = {
-        **HEADERS,
-        "Select": "assertion"
-    }
-    
     try:
-        response = requests.get(endpoint, headers=fetch_headers)
+        # Pull down the complete data payload cleanly
+        response = requests.get(endpoint, headers=HEADERS)
         if response.status_code != 200:
             return f"Error downloading dataset: Supabase endpoint returned status code {response.status_code}"
             
@@ -189,14 +177,20 @@ def stream_download_knowledge_base():
             yield "==================================================\n\n"
             
             for row in database_rows:
-                # Turn the dict into a string representation so it is perfectly hashable in sets
                 row_fingerprint = str(row)
                 
                 if row_fingerprint not in seen_assertions:
                     seen_assertions.add(row_fingerprint)
                     
-                    # Safely retrieve string data from row mapping
-                    assertion_text = row.get("assertion", "Empty assertion data log entry encountered.")
+                    # --- FIXED ROBUST PARSING LOGIC HERE ---
+                    # Check common variant casings or fall back to extracting the first string value it finds
+                    assertion_text = row.get("assertion") or row.get("Assertion") or row.get("text") or row.get("log")
+                    
+                    if not assertion_text:
+                        # If keys match an unexpected system name, extract the first non-ID text column value
+                        text_candidates = [val for key, val in row.items() if isinstance(val, str) and key not in ['id', 'created_at']]
+                        assertion_text = text_candidates[0] if text_candidates else str(row)
+
                     yield f"- {assertion_text}\n"
 
         return Response(
