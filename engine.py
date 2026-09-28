@@ -190,7 +190,7 @@ def stream_download_knowledge_base():
             
         database_rows = response.json()
         
-        # Build raw text file content block by block flatly
+        # Build text data file arrays flatly without nested function blocks
         output_lines = [
             "==================================================\n",
             "LUMENI AUTOMATED MATHEMATICAL LOG KNOWLEDGE BASE\n",
