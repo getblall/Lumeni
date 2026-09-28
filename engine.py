@@ -80,12 +80,14 @@ def background_math_engine_loop():
     
     active_column_key = "assertion"
     try:
+        # Request a lightweight row slice to safely inspect the current schema headers
         probe_headers = {**HEADERS, "Range": "0-0"}
         probe_response = requests.get(endpoint, headers=probe_headers)
         if probe_response.status_code == 200:
             res_data = probe_response.json()
+            # 🔧 FIX: Check if the response is an array list, and extract the first index dictionary element safely
             if isinstance(res_data, list) and len(res_data) > 0:
-                sample_row = res_data
+                sample_row = res_data[0]
                 for key in sample_row.keys():
                     if key not in ['id', 'created_at', 'timestamp']:
                         active_column_key = key
@@ -196,9 +198,3 @@ def stream_download_knowledge_base():
         "==================================================\n\n"
     ]
     
-    seen_assertions = set()
-    for row in database_rows:
-        row_fingerprint = str(row)
-        if row_fingerprint not in seen_assertions:
-            seen_assertions.add(row_fingerprint)
-            
