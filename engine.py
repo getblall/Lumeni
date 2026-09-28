@@ -75,7 +75,9 @@ def generate_math_assertion():
 
 def background_math_engine_loop():
     """Compiles batches of 15 advanced mathematical assertions every 60 seconds."""
-    print("[SYSTEM ENGINE] Autonomous SymPy computational engine thread triggered via boot hook.", flush=True)
+    # Let Flask settle on port 10000 first by pausing for half a second before starting loops
+    time.sleep(0.5)
+    print("[SYSTEM ENGINE] Autonomous SymPy computational engine thread fully activated.", flush=True)
     endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
     
     active_column_key = "assertion"
@@ -128,19 +130,6 @@ def background_math_engine_loop():
 # -------------------------------------------------------------------------
 # 3. WEB DASHBOARD PLATFORM ROUTES (Render Sleep Proof)
 # -------------------------------------------------------------------------
-# This hook intercepts Render's initial startup check and wakes up your script loop seamlessly
-@app.before_request
-def initialize_background_loop_on_first_ping():
-    """Spawns the background mathematical execution worker on first network ping."""
-    # Track the active threads to ensure we only spawn exactly one background loop container
-    for active_worker in threading.enumerate():
-        if active_worker.name == "LumeniMathEngineThread":
-            return
-            
-    print("[LAUNCH] Initial network check received. Booting background SymPy script loops...", flush=True)
-    engine_thread = threading.Thread(target=background_math_engine_loop, name="LumeniMathEngineThread", daemon=True)
-    engine_thread.start()
-
 @app.route('/')
 def dashboard_home():
     """Queries public headers to present global state metrics on the live screen."""
@@ -196,3 +185,18 @@ def stream_download_knowledge_base():
             
         database_rows = response.json()
     except Exception as network_err:
+        return f"Error connecting to cloud storage stream: {network_err}"
+
+    output_lines = [
+        "==================================================\n",
+        "LUMENI AUTOMATED MATHEMATICAL LOG KNOWLEDGE BASE\n",
+        f"Generated Extraction Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S')}\n",
+        "==================================================\n\n"
+    ]
+    
+    seen_assertions = set()
+    for row in database_rows:
+        row_fingerprint = str(row)
+        if row_fingerprint not in seen_assertions:
+            seen_assertions.add(row_fingerprint)
+            
