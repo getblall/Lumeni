@@ -11,7 +11,6 @@ import sympy as sp
 # -------------------------------------------------------------------------
 app = Flask(__name__)
 
-PORT = int(os.environ.get("PORT", 10000))
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://supabase.co").strip()
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "").strip()
 
@@ -56,7 +55,7 @@ def generate_math_assertion():
         else:
             # Generate a guaranteed invertible 2x2 square matrix
             skew_val = random.randint(1, 5)
-            M = sp.Matrix([[1, skew_val], [0, 1]])
+            M = sp.Matrix([[1, skew_val],])
             M_inv = M.inv()
             return f"Linear Algebra Matrix: The inverse of square matrix {M.tolist()} is equal to {M_inv.tolist()}."
             
@@ -75,9 +74,8 @@ def generate_math_assertion():
 
 def background_math_engine_loop():
     """Compiles batches of 15 advanced mathematical assertions every 60 seconds."""
-    # Let Flask settle on port 10000 first by pausing for half a second before starting loops
-    time.sleep(0.5)
-    print("[SYSTEM ENGINE] Autonomous SymPy computational engine thread fully activated.", flush=True)
+    time.sleep(2.0)
+    print("[SYSTEM ENGINE] Autonomous SymPy computational engine loop started successfully.", flush=True)
     endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
     
     active_column_key = "assertion"
@@ -87,7 +85,7 @@ def background_math_engine_loop():
         if probe_response.status_code == 200:
             res_data = probe_response.json()
             if isinstance(res_data, list) and len(res_data) > 0:
-                sample_row = res_data[0]
+                sample_row = res_data
                 for key in sample_row.keys():
                     if key not in ['id', 'created_at', 'timestamp']:
                         active_column_key = key
@@ -126,6 +124,10 @@ def background_math_engine_loop():
             print(f"[SYSTEM ENGINE] Processing error encountered inside runtime thread container: {e}", flush=True)
             
         time.sleep(60)
+
+# Start background math engine worker thread automatically upon file inclusion
+engine_thread = threading.Thread(target=background_math_engine_loop, daemon=True)
+engine_thread.start()
 
 # -------------------------------------------------------------------------
 # 3. WEB DASHBOARD PLATFORM ROUTES (Render Sleep Proof)
@@ -200,4 +202,3 @@ def stream_download_knowledge_base():
         if row_fingerprint not in seen_assertions:
             seen_assertions.add(row_fingerprint)
             
-            assertion_text = None
