@@ -53,9 +53,9 @@ def generate_math_assertion():
             det = M.det()
             return f"Linear Algebra Matrix: The determinant of 2x2 matrix {M.tolist()} is equal to {det}."
         else:
-            # Generate a guaranteed invertible 2x2 square matrix
+            # 🔧 FIX: Generate a guaranteed invertible 2x2 square upper-triangular matrix
             skew_val = random.randint(1, 5)
-            M = sp.Matrix([[1, skew_val],])
+            M = sp.Matrix([[1, skew_val], [0, 1]])
             M_inv = M.inv()
             return f"Linear Algebra Matrix: The inverse of square matrix {M.tolist()} is equal to {M_inv.tolist()}."
             
@@ -85,7 +85,7 @@ def background_math_engine_loop():
         probe_response = requests.get(endpoint, headers=probe_headers)
         if probe_response.status_code == 200:
             res_data = probe_response.json()
-            # 🔧 FIX: Check if the response is an array list, and extract the first index dictionary element safely
+            # Extract the first record dictionary element safely from list array wrappers
             if isinstance(res_data, list) and len(res_data) > 0:
                 sample_row = res_data[0]
                 for key in sample_row.keys():
