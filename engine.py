@@ -184,12 +184,14 @@ def stream_download_knowledge_base():
     """Streams the complete cloud database history to the client browser text console."""
     endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
     
-    # 🔧 FIX: Removed inner try boundaries to avoid trailing syntax mismatch states entirely
-    response = requests.get(endpoint, headers=HEADERS)
-    if response.status_code != 200:
-        return f"Error downloading dataset: Supabase endpoint returned status code {response.status_code}"
-        
-    database_rows = response.json()
+    try:
+        response = requests.get(endpoint, headers=HEADERS)
+        if response.status_code != 200:
+            return f"Error downloading dataset: Supabase endpoint returned status code {response.status_code}"
+            
+        database_rows = response.json()
+    except Exception as network_err:
+        return f"Error connecting to cloud storage stream: {network_err}"
 
     output_lines = [
         "==================================================\n",
