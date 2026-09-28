@@ -54,7 +54,7 @@ def generate_math_assertion():
             det = M.det()
             return f"Linear Algebra Matrix: The determinant of 2x2 matrix {M.tolist()} is equal to {det}."
         else:
-            M = sp.Matrix([[1, random.randint(1, 3)], [0, 1]])
+            M = sp.Matrix([[1, random.randint(1, 3)],])
             M_inv = M.inv()
             return f"Linear Algebra Matrix: The inverse of matrix {M.tolist()} is equal to {M_inv.tolist()}."
             
@@ -76,6 +76,10 @@ def background_math_engine_loop():
     print("[SYSTEM ENGINE] Autonomous SymPy computational engine thread spawned successfully.", flush=True)
     endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
     
+    # Track the active working column name dynamically
+    # Start with "assertion", but fallback if the schema rejects it
+    active_column_key = "assertion"
+    
     while True:
         try:
             print("[SYSTEM ENGINE] Computing fresh batch of 15 mathematical assertions...", flush=True)
@@ -83,11 +87,32 @@ def background_math_engine_loop():
             
             for _ in range(15):
                 assertion_string = generate_math_assertion()
-                payload_batch.append({"assertion": assertion_string})
+                payload_batch.append({active_column_key: assertion_string})
             
             response = requests.post(endpoint, headers=HEADERS, json=payload_batch)
+            
             if response.status_code == 201:
                 print(f"[SYSTEM ENGINE] Batch processing successful! 15 assertions appended to cloud storage.", flush=True)
+            elif response.status_code == 400 and "PGRST204" in response.text:
+                # 🔧 AUTOMATIC RECOVERY ATTEMPT: Column mismatch detected!
+                print(f"[SYSTEM ENGINE] Schema mismatch on '{active_column_key}'. Profiling alternate database keys...", flush=True)
+                
+                # Cycle through common production column alternatives
+                fallback_keys = ["Assertion", "text", "log", "math_log", "content", "data"]
+                success = False
+                
+                for candidate_key in fallback_keys:
+                    retry_batch = [{candidate_key: item[active_column_key]} for item in payload_batch]
+                    retry_response = requests.post(endpoint, headers=HEADERS, json=retry_batch)
+                    
+                    if retry_response.status_code == 201:
+                        print(f"[SYSTEM ENGINE] Connection Restored! Found correct database column layout: '{candidate_key}'", flush=True)
+                        active_column_key = candidate_key
+                        success = True
+                        break
+                
+                if not success:
+                    print(f"[SYSTEM ENGINE] Critical: Could not find matching column layout. Payload received: {response.text}", flush=True)
             else:
                 print(f"[SYSTEM ENGINE] Database pipe warning. Status code returned: {response.status_code}. Response: {response.text}", flush=True)
                 
@@ -162,7 +187,6 @@ def stream_download_knowledge_base():
     endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
     
     try:
-        # Pull down the complete data payload cleanly
         response = requests.get(endpoint, headers=HEADERS)
         if response.status_code != 200:
             return f"Error downloading dataset: Supabase endpoint returned status code {response.status_code}"
@@ -182,31 +206,4 @@ def stream_download_knowledge_base():
                 if row_fingerprint not in seen_assertions:
                     seen_assertions.add(row_fingerprint)
                     
-                    # --- FIXED ROBUST PARSING LOGIC HERE ---
-                    # Check common variant casings or fall back to extracting the first string value it finds
-                    assertion_text = row.get("assertion") or row.get("Assertion") or row.get("text") or row.get("log")
-                    
-                    if not assertion_text:
-                        # If keys match an unexpected system name, extract the first non-ID text column value
-                        text_candidates = [val for key, val in row.items() if isinstance(val, str) and key not in ['id', 'created_at']]
-                        assertion_text = text_candidates[0] if text_candidates else str(row)
-
-                    yield f"- {assertion_text}\n"
-
-        return Response(
-            generate_text_stream(),
-            mimetype="text/plain",
-            headers={
-                "Content-Disposition": "attachment; filename=knowledge_base.txt"
-            }
-        )
-        
-    except Exception as e:
-        return f"Error building database data stream: {e}"
-
-# -------------------------------------------------------------------------
-# 4. ENVIRONMENT RUNTIME ENTRYSCRIPT EXECUTION
-# -------------------------------------------------------------------------
-if __name__ == '__main__':
-    print(f"[LAUNCH] Initializing Flask Production Application Framework on Port {PORT}...", flush=True)
-    app.run(host='0.0.0.0', port=PORT, debug=False)
+                    # Extract the first valid text data element it encounters in the record dictionary
