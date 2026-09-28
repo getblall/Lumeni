@@ -54,9 +54,11 @@ def generate_math_assertion():
             det = M.det()
             return f"Linear Algebra Matrix: The determinant of 2x2 matrix {M.tolist()} is equal to {det}."
         else:
-            M = sp.Matrix([[1, random.randint(1, 3)],])
+            # 🔧 FIX: Generate a guaranteed invertible 2x2 square matrix
+            skew_val = random.randint(1, 5)
+            M = sp.Matrix([[1, skew_val], [0, 1]])
             M_inv = M.inv()
-            return f"Linear Algebra Matrix: The inverse of matrix {M.tolist()} is equal to {M_inv.tolist()}."
+            return f"Linear Algebra Matrix: The inverse of square matrix {M.tolist()} is equal to {M_inv.tolist()}."
             
     else:
         sub = random.choice(['expand', 'roots'])
@@ -76,10 +78,21 @@ def background_math_engine_loop():
     print("[SYSTEM ENGINE] Autonomous SymPy computational engine thread spawned successfully.", flush=True)
     endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
     
-    # Track the active working column name dynamically
-    # Start with "assertion", but fallback if the schema rejects it
+    # 🔧 AUTO-DISCOVERY ENGINE: Probe database to find your exact column key layout name
     active_column_key = "assertion"
-    
+    try:
+        probe_headers = {**HEADERS, "Range": "0-0"}
+        probe_response = requests.get(endpoint, headers=probe_headers)
+        if probe_response.status_code == 200 and isinstance(probe_response.json(), list) and len(probe_response.json()) > 0:
+            sample_row = probe_response.json()[0]
+            for key in sample_row.keys():
+                if key not in ['id', 'created_at', 'timestamp']:
+                    active_column_key = key
+                    print(f"[SYSTEM ENGINE] Auto-Discovery successful! Detected live database column: '{active_column_key}'", flush=True)
+                    break
+    except Exception as e:
+        print(f"[SYSTEM ENGINE] Auto-Discovery probe skipped, using fallback keys: {e}", flush=True)
+
     while True:
         try:
             print("[SYSTEM ENGINE] Computing fresh batch of 15 mathematical assertions...", flush=True)
@@ -92,27 +105,17 @@ def background_math_engine_loop():
             response = requests.post(endpoint, headers=HEADERS, json=payload_batch)
             
             if response.status_code == 201:
-                print(f"[SYSTEM ENGINE] Batch processing successful! 15 assertions appended to cloud storage.", flush=True)
+                print(f"[SYSTEM ENGINE] Batch processing successful! 15 assertions appended to cloud storage using key '{active_column_key}'.", flush=True)
             elif response.status_code == 400 and "PGRST204" in response.text:
-                # 🔧 AUTOMATIC RECOVERY ATTEMPT: Column mismatch detected!
-                print(f"[SYSTEM ENGINE] Schema mismatch on '{active_column_key}'. Profiling alternate database keys...", flush=True)
-                
-                # Cycle through common production column alternatives
-                fallback_keys = ["Assertion", "text", "log", "math_log", "content", "data"]
-                success = False
-                
+                print(f"[SYSTEM ENGINE] Schema cache mismatch. Cycling production backup column identifiers...", flush=True)
+                fallback_keys = ["Assertion", "text", "log", "math_log", "content"]
                 for candidate_key in fallback_keys:
                     retry_batch = [{candidate_key: item[active_column_key]} for item in payload_batch]
                     retry_response = requests.post(endpoint, headers=HEADERS, json=retry_batch)
-                    
                     if retry_response.status_code == 201:
-                        print(f"[SYSTEM ENGINE] Connection Restored! Found correct database column layout: '{candidate_key}'", flush=True)
+                        print(f"[SYSTEM ENGINE] Connection Restored! Switched active tracking column to: '{candidate_key}'", flush=True)
                         active_column_key = candidate_key
-                        success = True
                         break
-                
-                if not success:
-                    print(f"[SYSTEM ENGINE] Critical: Could not find matching column layout. Payload received: {response.text}", flush=True)
             else:
                 print(f"[SYSTEM ENGINE] Database pipe warning. Status code returned: {response.status_code}. Response: {response.text}", flush=True)
                 
@@ -201,9 +204,3 @@ def stream_download_knowledge_base():
             yield "==================================================\n\n"
             
             for row in database_rows:
-                row_fingerprint = str(row)
-                
-                if row_fingerprint not in seen_assertions:
-                    seen_assertions.add(row_fingerprint)
-                    
-                    # Extract the first valid text data element it encounters in the record dictionary
