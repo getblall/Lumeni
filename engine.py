@@ -78,7 +78,6 @@ def background_math_engine_loop():
     print("[SYSTEM ENGINE] Autonomous SymPy computational engine thread spawned successfully.", flush=True)
     endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
     
-    # Auto-Discovery fallback string configuration tracking
     active_column_key = "assertion"
     try:
         probe_headers = {**HEADERS, "Range": "0-0"}
@@ -143,12 +142,10 @@ def dashboard_home():
     try:
         response = requests.get(endpoint, headers=count_headers)
         content_range = response.headers.get("Content-Range", "")
-        
         if "/" in content_range:
             total_assertions = content_range.split("/")[-1]
         else:
             total_assertions = "Unknown"
-            
     except Exception as e:
         print(f"[WEB ERROR] Failed to fetch total record schema estimations: {e}", flush=True)
         total_assertions = "Error Connecting"
