@@ -88,7 +88,9 @@ def background_math_engine_loop():
             
             # Post directly into the database via REST pipeline
             response = requests.post(endpoint, headers=HEADERS, json=payload_batch)
-            if response.status_code in:
+            
+            # --- FIXED LINE 91 BRACKETS ---
+            if response.status_code in [200, 201]:
                 print(f"[SYSTEM ENGINE] Batch processing successful! 15 assertions appended to cloud storage.", flush=True)
             else:
                 print(f"[SYSTEM ENGINE] Database pipe warning. Status code returned: {response.status_code}. Response: {response.text}", flush=True)
