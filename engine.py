@@ -75,7 +75,7 @@ def generate_math_assertion():
 
 def background_math_engine_loop():
     """Compiles batches of 15 advanced mathematical assertions every 60 seconds."""
-    print("[SYSTEM ENGINE] Autonomous SymPy computational engine thread spawned successfully.", flush=True)
+    print("[SYSTEM ENGINE] Autonomous SymPy computational engine loop started successfully.", flush=True)
     endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
     
     active_column_key = "assertion"
