@@ -184,26 +184,23 @@ def dashboard_home():
 def stream_download_knowledge_base():
     """Streams the complete cloud database history to the client browser text console."""
     endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
-    
     try:
         response = requests.get(endpoint, headers=HEADERS)
         if response.status_code != 200:
             return f"Error downloading dataset: Supabase endpoint returned status code {response.status_code}"
             
         database_rows = response.json()
-    except Exception as network_err:
-        return f"Error connecting to cloud storage stream: {network_err}"
-
-    output_lines = [
-        "==================================================\n",
-        "LUMENI AUTOMATED MATHEMATICAL LOG KNOWLEDGE BASE\n",
-        f"Generated Extraction Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S')}\n",
-        "==================================================\n\n"
-    ]
-    
-    seen_assertions = set()
-    for row in database_rows:
-        row_fingerprint = str(row)
-        if row_fingerprint not in seen_assertions:
-            seen_assertions.add(row_fingerprint)
-            
+        
+        output_lines = [
+            "==================================================\n",
+            "LUMENI AUTOMATED MATHEMATICAL LOG KNOWLEDGE BASE\n",
+            f"Generated Extraction Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S')}\n",
+            "==================================================\n\n"
+        ]
+        
+        seen_assertions = set()
+        for row in database_rows:
+            row_fingerprint = str(row)
+            if row_fingerprint not in seen_assertions:
+                seen_assertions.add(row_fingerprint)
+                
