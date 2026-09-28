@@ -2,7 +2,7 @@ import os
 import time
 import random
 import threading
-from flask import Flask, Response, jsonify
+from flask import Flask, Response
 import requests
 import sympy as sp
 
@@ -32,7 +32,6 @@ def generate_math_assertion():
     x, y = sp.symbols('x y')
     
     if chosen_cat == 'calculus':
-        # Select derivative, integral, or limit
         sub = random.choice(['derivative', 'integral', 'limit'])
         if sub == 'derivative':
             expr = random.choice([sp.sin(x)*sp.exp(x), x**3 - 5*x**2 + 2, sp.log(x**2 + 1)])
@@ -48,7 +47,6 @@ def generate_math_assertion():
             return f"Calculus Limit: The limit of {expr} as x approaches 0 is equal to {lim_val}."
             
     elif chosen_cat == 'linear_algebra':
-        # Select determinant or inverse matrix operation
         sub = random.choice(['determinant', 'inverse'])
         if sub == 'determinant':
             a, b, c, d = random.randint(-5, 5), random.randint(-5, 5), random.randint(-5, 5), random.randint(-5, 5)
@@ -62,10 +60,9 @@ def generate_math_assertion():
             return f"Linear Algebra Matrix: The inverse of matrix {M.tolist()} is equal to {M_inv.tolist()}."
             
     else:
-        # Standard Algebraic transformations
         sub = random.choice(['expand', 'roots'])
         if sub == 'expand':
-            expr = (x + random.randint(1, 5))**random.choice([2, 3])
+            expr = (x + random.randint(1, 5))**random.randint(2, 4)
             expanded = sp.expand(expr)
             return f"Algebra Expansion: Expanding the expression {expr} results structurally in {expanded}."
         else:
@@ -181,10 +178,6 @@ def stream_download_knowledge_base():
             return f"Error downloading dataset: Supabase endpoint returned status code {response.status_code}"
             
         database_rows = response.json()
-        
-        # -----------------------------------------------------------------
-        # 🔧 FIX IMPLEMENTED HERE: Unhashable type dict fix configuration
-        # -----------------------------------------------------------------
         seen_assertions = set()
         
         def generate_text_stream():
@@ -216,3 +209,8 @@ def stream_download_knowledge_base():
         return f"Error building database data stream: {e}"
 
 # -------------------------------------------------------------------------
+# 4. ENVIRONMENT RUNTIME ENTRYSCRIPT EXECUTION
+# -------------------------------------------------------------------------
+if __name__ == '__main__':
+    print(f"[LAUNCH] Initializing Flask Production Application Framework on Port {PORT}...", flush=True)
+    app.run(host='0.0.0.0', port=PORT, debug=False)
