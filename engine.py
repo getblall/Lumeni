@@ -55,7 +55,7 @@ def generate_math_assertion():
             return f"Linear Algebra Matrix: The determinant of 2x2 matrix {M.tolist()} is equal to {det}."
         else:
             # Guarantee invertible matrix by picking simple identity skew
-            M = sp.Matrix([[1, random.randint(1, 3)], [0, 1]])
+            M = sp.Matrix([[1, random.randint(1, 3)],])
             M_inv = M.inv()
             return f"Linear Algebra Matrix: The inverse of matrix {M.tolist()} is equal to {M_inv.tolist()}."
             
@@ -89,8 +89,8 @@ def background_math_engine_loop():
             # Post directly into the database via REST pipeline
             response = requests.post(endpoint, headers=HEADERS, json=payload_batch)
             
-            # --- FIXED LINE 91 BRACKETS ---
-            if response.status_code in [200, 201]:
+            # Use direct equality check to bypass any list parsing error entirely
+            if response.status_code == 201:
                 print(f"[SYSTEM ENGINE] Batch processing successful! 15 assertions appended to cloud storage.", flush=True)
             else:
                 print(f"[SYSTEM ENGINE] Database pipe warning. Status code returned: {response.status_code}. Response: {response.text}", flush=True)
