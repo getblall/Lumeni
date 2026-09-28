@@ -75,9 +75,9 @@ def generate_math_assertion():
 
 def background_math_engine_loop():
     """Compiles batches of 15 advanced mathematical assertions every 60 seconds."""
-    # Give the main server engine room to bind to its port smoothly
-    time.sleep(2.0)
-    print("[SYSTEM ENGINE] Autonomous SymPy engine loop detached and running.", flush=True)
+    # Let Flask settle on port 10000 first by pausing for half a second before starting loops
+    time.sleep(0.5)
+    print("[SYSTEM ENGINE] Autonomous SymPy computational engine thread fully activated.", flush=True)
     endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
     
     active_column_key = "assertion"
@@ -91,10 +91,10 @@ def background_math_engine_loop():
                 for key in sample_row.keys():
                     if key not in ['id', 'created_at', 'timestamp']:
                         active_column_key = key
-                        print(f"[SYSTEM ENGINE] Live column auto-detected: '{active_column_key}'", flush=True)
+                        print(f"[SYSTEM ENGINE] Auto-Discovery successful! Detected live database column: '{active_column_key}'", flush=True)
                         break
     except Exception as e:
-        print(f"[SYSTEM ENGINE] Auto-Discovery probe deferred: {e}", flush=True)
+        print(f"[SYSTEM ENGINE] Auto-Discovery probe skipped, using fallback keys: {e}", flush=True)
 
     while True:
         try:
@@ -108,22 +108,22 @@ def background_math_engine_loop():
             response = requests.post(endpoint, headers=HEADERS, json=payload_batch)
             
             if response.status_code == 201:
-                print(f"[SYSTEM ENGINE] Batch processing successful! 15 assertions saved using key '{active_column_key}'.", flush=True)
+                print(f"[SYSTEM ENGINE] Batch processing successful! 15 assertions appended to cloud storage using key '{active_column_key}'.", flush=True)
             elif response.status_code == 400 and "PGRST204" in response.text:
-                print(f"[SYSTEM ENGINE] Column layout shift detected. Syncing alternate properties...", flush=True)
+                print(f"[SYSTEM ENGINE] Schema cache mismatch. Cycling production backup column identifiers...", flush=True)
                 fallback_keys = ["Assertion", "text", "log", "math_log", "content"]
                 for candidate_key in fallback_keys:
                     retry_batch = [{candidate_key: item[active_column_key]} for item in payload_batch]
                     retry_response = requests.post(endpoint, headers=HEADERS, json=retry_batch)
                     if retry_response.status_code == 201:
-                        print(f"[SYSTEM ENGINE] Layout aligned! Tracking column set to: '{candidate_key}'", flush=True)
+                        print(f"[SYSTEM ENGINE] Connection Restored! Switched active tracking column to: '{candidate_key}'", flush=True)
                         active_column_key = candidate_key
                         break
             else:
-                print(f"[SYSTEM ENGINE] Database pipe message. Code: {response.status_code}.", flush=True)
+                print(f"[SYSTEM ENGINE] Database pipe warning. Status code returned: {response.status_code}. Response: {response.text}", flush=True)
                 
         except Exception as e:
-            print(f"[SYSTEM ENGINE] Execution exception caught inside container: {e}", flush=True)
+            print(f"[SYSTEM ENGINE] Processing error encountered inside runtime thread container: {e}", flush=True)
             
         time.sleep(60)
 
@@ -200,5 +200,3 @@ def stream_download_knowledge_base():
         if row_fingerprint not in seen_assertions:
             seen_assertions.add(row_fingerprint)
             
-            assertion_text = row.get("assertion") or row.get("Assertion") or row.get("text") or row.get("log") or row.get("content")
-            if not assertion_text:
