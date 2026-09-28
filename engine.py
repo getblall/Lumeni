@@ -23,7 +23,7 @@ HEADERS = {
 }
 
 # -------------------------------------------------------------------------
-# 2. AUTONOMOUS MATHEMATICAL GENERATION ENGINE (SymPy Logic)
+# 2. AUTONOMOUS MATHEMATICAL GENERATION ENGINE (SymPy Loop Container)
 # -------------------------------------------------------------------------
 def generate_math_assertion():
     """Generates a single advanced mathematical proof assertion using SymPy."""
@@ -73,11 +73,12 @@ def generate_math_assertion():
             roots = sp.solve(expr, x)
             return f"Algebra Roots: The real roots solved for the equation {expr} = 0 evaluate to {roots}."
 
-def run_math_engine_cycle():
-    """Executes a single processing block cycle mapping data straight into rows."""
+def background_math_engine_loop():
+    """Compiles batches of 15 advanced mathematical assertions every 60 seconds."""
+    print("[SYSTEM ENGINE] Autonomous SymPy computational engine thread spawned successfully.", flush=True)
     endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
     
-    # Auto-Discovery structural column identifier tracking
+    # Auto-Discovery fallback string configuration tracking
     active_column_key = "assertion"
     try:
         probe_headers = {**HEADERS, "Range": "0-0"}
@@ -89,38 +90,40 @@ def run_math_engine_cycle():
                 for key in sample_row.keys():
                     if key not in ['id', 'created_at', 'timestamp']:
                         active_column_key = key
+                        print(f"[SYSTEM ENGINE] Auto-Discovery successful! Detected live database column: '{active_column_key}'", flush=True)
                         break
-    except Exception:
-        pass
-
-    try:
-        print("[SYSTEM ENGINE] Computing fresh batch of 15 mathematical assertions...", flush=True)
-        payload_batch = []
-        for _ in range(15):
-            assertion_string = generate_math_assertion()
-            payload_batch.append({active_column_key: assertion_string})
-        
-        response = requests.post(endpoint, headers=HEADERS, json=payload_batch)
-        if response.status_code == 201:
-            print(f"[SYSTEM ENGINE] Batch processing successful! 15 assertions appended to cloud storage using key '{active_column_key}'.", flush=True)
-        elif response.status_code == 400 and "PGRST204" in response.text:
-            fallback_keys = ["Assertion", "text", "log", "math_log", "content"]
-            for candidate_key in fallback_keys:
-                retry_batch = [{candidate_key: item[active_column_key]} for item in payload_batch]
-                retry_response = requests.post(endpoint, headers=HEADERS, json=retry_batch)
-                if retry_response.status_code == 201:
-                    print(f"[SYSTEM ENGINE] Connection Restored! Switched key to: '{candidate_key}'", flush=True)
-                    break
-        else:
-            print(f"[SYSTEM ENGINE] Database pipe warning. Status code: {response.status_code}", flush=True)
     except Exception as e:
-        print(f"[SYSTEM ENGINE] Runtime pipeline loop error: {e}", flush=True)
+        print(f"[SYSTEM ENGINE] Auto-Discovery probe skipped, using fallback keys: {e}", flush=True)
 
-def background_math_engine_loop():
-    """Loops indefinitely on a 60-second cycle."""
-    print("[SYSTEM ENGINE] Autonomous SymPy computational engine loop started.", flush=True)
     while True:
-        run_math_engine_cycle()
+        try:
+            print("[SYSTEM ENGINE] Computing fresh batch of 15 mathematical assertions...", flush=True)
+            payload_batch = []
+            
+            for _ in range(15):
+                assertion_string = generate_math_assertion()
+                payload_batch.append({active_column_key: assertion_string})
+            
+            response = requests.post(endpoint, headers=HEADERS, json=payload_batch)
+            
+            if response.status_code == 201:
+                print(f"[SYSTEM ENGINE] Batch processing successful! 15 assertions appended to cloud storage using key '{active_column_key}'.", flush=True)
+            elif response.status_code == 400 and "PGRST204" in response.text:
+                print(f"[SYSTEM ENGINE] Schema cache mismatch. Cycling production backup column identifiers...", flush=True)
+                fallback_keys = ["Assertion", "text", "log", "math_log", "content"]
+                for candidate_key in fallback_keys:
+                    retry_batch = [{candidate_key: item[active_column_key]} for item in payload_batch]
+                    retry_response = requests.post(endpoint, headers=HEADERS, json=retry_batch)
+                    if retry_response.status_code == 201:
+                        print(f"[SYSTEM ENGINE] Connection Restored! Switched active tracking column to: '{candidate_key}'", flush=True)
+                        active_column_key = candidate_key
+                        break
+            else:
+                print(f"[SYSTEM ENGINE] Database pipe warning. Status code returned: {response.status_code}. Response: {response.text}", flush=True)
+                
+        except Exception as e:
+            print(f"[SYSTEM ENGINE] Processing error encountered inside runtime thread container: {e}", flush=True)
+            
         time.sleep(60)
 
 # -------------------------------------------------------------------------
@@ -130,15 +133,27 @@ def background_math_engine_loop():
 def dashboard_home():
     """Queries public headers to present global state metrics on the live screen."""
     endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
-    count_headers = {**HEADERS, "Prefer": "count=exact", "Range": "0-0"}
+    
+    count_headers = {
+        **HEADERS,
+        "Prefer": "count=exact",
+        "Range": "0-0"
+    }
+    
     try:
         response = requests.get(endpoint, headers=count_headers)
         content_range = response.headers.get("Content-Range", "")
-        total_assertions = content_range.split("/")[-1] if "/" in content_range else "Unknown"
-    except Exception:
+        
+        if "/" in content_range:
+            total_assertions = content_range.split("/")[-1]
+        else:
+            total_assertions = "Unknown"
+            
+    except Exception as e:
+        print(f"[WEB ERROR] Failed to fetch total record schema estimations: {e}", flush=True)
         total_assertions = "Error Connecting"
 
-    return f"""
+    html_layout = f"""
     <!DOCTYPE html>
     <html>
     <head>
@@ -165,6 +180,7 @@ def dashboard_home():
     </body>
     </html>
     """
+    return html_layout
 
 def generate_text_stream(database_rows):
     """Clean isolated generator function ensuring structural block alignment."""
@@ -178,6 +194,7 @@ def generate_text_stream(database_rows):
         row_fingerprint = str(row)
         if row_fingerprint not in seen_assertions:
             seen_assertions.add(row_fingerprint)
+            
             assertion_text = row.get("assertion") or row.get("Assertion") or row.get("text") or row.get("log") or row.get("content")
             if not assertion_text:
                 text_candidates = [val for key, val in row.items() if isinstance(val, str) and key not in ['id', 'created_at']]
@@ -186,16 +203,3 @@ def generate_text_stream(database_rows):
 
 @app.route('/download')
 def stream_download_knowledge_base():
-    """Streams the complete cloud database history to the client browser text console."""
-    endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
-    try:
-        response = requests.get(endpoint, headers=HEADERS)
-        if response.status_code != 200:
-            return f"Error downloading dataset: Supabase endpoint returned status code {response.status_code}"
-        return Response(generate_text_stream(response.json()), mimetype="text/plain", headers={"Content-Disposition": "attachment; filename=knowledge_base.txt"})
-    except Exception as e:
-        return f"Error building database data stream: {e}"
-
-# -------------------------------------------------------------------------
-# 4. ENVIRONMENT RUNTIME ENTRYSCRIPT EXECUTION
-# -------------------------------------------------------------------------
