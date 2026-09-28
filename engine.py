@@ -54,7 +54,7 @@ def generate_math_assertion():
             det = M.det()
             return f"Linear Algebra Matrix: The determinant of 2x2 matrix {M.tolist()} is equal to {det}."
         else:
-            # 🔧 FIX: Generate a guaranteed invertible 2x2 square matrix
+            # Generate a guaranteed invertible 2x2 square matrix to fulfill square prerequisites
             skew_val = random.randint(1, 5)
             M = sp.Matrix([[1, skew_val], [0, 1]])
             M_inv = M.inv()
@@ -78,18 +78,20 @@ def background_math_engine_loop():
     print("[SYSTEM ENGINE] Autonomous SymPy computational engine thread spawned successfully.", flush=True)
     endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
     
-    # 🔧 AUTO-DISCOVERY ENGINE: Probe database to find your exact column key layout name
+    # Auto-Discovery fallback string configuration tracking
     active_column_key = "assertion"
     try:
         probe_headers = {**HEADERS, "Range": "0-0"}
         probe_response = requests.get(endpoint, headers=probe_headers)
-        if probe_response.status_code == 200 and isinstance(probe_response.json(), list) and len(probe_response.json()) > 0:
-            sample_row = probe_response.json()[0]
-            for key in sample_row.keys():
-                if key not in ['id', 'created_at', 'timestamp']:
-                    active_column_key = key
-                    print(f"[SYSTEM ENGINE] Auto-Discovery successful! Detected live database column: '{active_column_key}'", flush=True)
-                    break
+        if probe_response.status_code == 200:
+            res_data = probe_response.json()
+            if isinstance(res_data, list) and len(res_data) > 0:
+                sample_row = res_data[0]
+                for key in sample_row.keys():
+                    if key not in ['id', 'created_at', 'timestamp']:
+                        active_column_key = key
+                        print(f"[SYSTEM ENGINE] Auto-Discovery successful! Detected live database column: '{active_column_key}'", flush=True)
+                        break
     except Exception as e:
         print(f"[SYSTEM ENGINE] Auto-Discovery probe skipped, using fallback keys: {e}", flush=True)
 
@@ -203,4 +205,3 @@ def stream_download_knowledge_base():
             yield f"Generated Extraction Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
             yield "==================================================\n\n"
             
-            for row in database_rows:
