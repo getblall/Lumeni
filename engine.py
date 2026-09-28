@@ -202,4 +202,4 @@ def generate_text_stream(database_rows):
             assertion_text = row.get("assertion") or row.get("Assertion") or row.get("text") or row.get("log") or row.get("content")
             if not assertion_text:
                 text_candidates = [val for key, val in row.items() if isinstance(val, str) and key not in ['id', 'created_at']]
-                assertion_text = text_candidates[0] if text_candidates else str(row)
+                assertion_text = text_candidates if text_candidates else str(row)
