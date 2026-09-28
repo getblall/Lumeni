@@ -54,7 +54,7 @@ def generate_math_assertion():
             det = M.det()
             return f"Linear Algebra Matrix: The determinant of 2x2 matrix {M.tolist()} is equal to {det}."
         else:
-            # Generate a guaranteed invertible 2x2 square matrix to fulfill square prerequisites
+            # Generate a guaranteed invertible 2x2 square matrix
             skew_val = random.randint(1, 5)
             M = sp.Matrix([[1, skew_val], [0, 1]])
             M_inv = M.inv()
@@ -78,7 +78,6 @@ def background_math_engine_loop():
     print("[SYSTEM ENGINE] Autonomous SymPy computational engine thread spawned successfully.", flush=True)
     endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
     
-    # Auto-Discovery fallback string configuration tracking
     active_column_key = "assertion"
     try:
         probe_headers = {**HEADERS, "Range": "0-0"}
@@ -186,22 +185,21 @@ def dashboard_home():
     """
     return html_layout
 
-@app.route('/download')
-def stream_download_knowledge_base():
-    """Streams the complete cloud database history to the client browser text console."""
-    endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
+
+def generate_text_stream(database_rows):
+    """Clean isolated generator function ensuring structural block alignment."""
+    yield "==================================================\n"
+    yield "LUMENI AUTOMATED MATHEMATICAL LOG KNOWLEDGE BASE\n"
+    yield f"Generated Extraction Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
+    yield "==================================================\n\n"
     
-    try:
-        response = requests.get(endpoint, headers=HEADERS)
-        if response.status_code != 200:
-            return f"Error downloading dataset: Supabase endpoint returned status code {response.status_code}"
+    seen_assertions = set()
+    for row in database_rows:
+        row_fingerprint = str(row)
+        if row_fingerprint not in seen_assertions:
+            seen_assertions.add(row_fingerprint)
             
-        database_rows = response.json()
-        seen_assertions = set()
-        
-        def generate_text_stream():
-            yield "==================================================\n"
-            yield "LUMENI AUTOMATED MATHEMATICAL LOG KNOWLEDGE BASE\n"
-            yield f"Generated Extraction Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
-            yield "==================================================\n\n"
-            
+            assertion_text = row.get("assertion") or row.get("Assertion") or row.get("text") or row.get("log") or row.get("content")
+            if not assertion_text:
+                text_candidates = [val for key, val in row.items() if isinstance(val, str) and key not in ['id', 'created_at']]
+                assertion_text = text_candidates[0] if text_candidates else str(row)
