@@ -23,7 +23,7 @@ HEADERS = {
 }
 
 # -------------------------------------------------------------------------
-# 2. AUTONOMOUS MATHEMATICAL GENERATION ENGINE (SymPy Loop Container)
+# 2. AUTONOMOUS MATHEMATICAL GENERATION ENGINE (SymPy Logic Container)
 # -------------------------------------------------------------------------
 def generate_math_assertion():
     """Generates a single advanced mathematical proof assertion using SymPy."""
@@ -190,15 +190,17 @@ def stream_download_knowledge_base():
             
         database_rows = response.json()
         
-        def generate_text_stream():
-            yield "==================================================\n"
-            yield "LUMENI AUTOMATED MATHEMATICAL LOG KNOWLEDGE BASE\n"
-            yield f"Generated Extraction Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
-            yield "==================================================\n\n"
-            
-            seen_assertions = set()
-            for row in database_rows:
-                row_fingerprint = str(row)
-                if row_fingerprint not in seen_assertions:
-                    seen_assertions.add(row_fingerprint)
-                    
+        # Build raw text file content block by block flatly
+        output_lines = [
+            "==================================================\n",
+            "LUMENI AUTOMATED MATHEMATICAL LOG KNOWLEDGE BASE\n",
+            f"Generated Extraction Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S')}\n",
+            "==================================================\n\n"
+        ]
+        
+        seen_assertions = set()
+        for row in database_rows:
+            row_fingerprint = str(row)
+            if row_fingerprint not in seen_assertions:
+                seen_assertions.add(row_fingerprint)
+                
