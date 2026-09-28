@@ -200,3 +200,4 @@ def stream_download_knowledge_base():
         if row_fingerprint not in seen_assertions:
             seen_assertions.add(row_fingerprint)
             
+            assertion_text = None
