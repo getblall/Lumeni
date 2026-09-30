@@ -2,7 +2,7 @@ import os
 import time
 import random
 import threading
-from flask import Flask, Response
+from flask import Flask, Response, jsonify
 import requests
 import sympy as sp
 
@@ -24,6 +24,9 @@ HEADERS = {
 
 # ⚡ OPTIMIZATION: Pre-define global math symbols to conserve CPU cycles at 30s speeds
 X, Y = sp.symbols('x y')
+
+# Global variable to cache the live discovered column for the web download route
+LIVE_COLUMN_TRACKER = {"key": "assertion"}
 
 # -------------------------------------------------------------------------
 # 2. AUTONOMOUS MATHEMATICAL GENERATION ENGINE (SymPy Logic Container)
@@ -91,6 +94,7 @@ def background_math_engine_loop():
                 for key in sample_row.keys():
                     if key not in ['id', 'created_at', 'timestamp']:
                         active_column_key = key
+                        LIVE_COLUMN_TRACKER["key"] = key
                         print(f"[SYSTEM ENGINE] Auto-Discovery successful! Detected live database column: '{active_column_key}'", flush=True)
                         break
     except Exception as e:
@@ -99,8 +103,6 @@ def background_math_engine_loop():
     while True:
         try:
             print("[SYSTEM ENGINE] Computing fresh batch of 15 mathematical assertions...", flush=True)
-            
-            # Isolate raw generated strings completely from database dictionary mutation traps
             raw_math_strings = [generate_math_assertion() for _ in range(15)]
             
             payload_batch = [{active_column_key: string} for string in raw_math_strings]
@@ -119,6 +121,7 @@ def background_math_engine_loop():
                     if retry_response.status_code == 201:
                         print(f"[SYSTEM ENGINE] Connection Restored! Switched active tracking column to: '{candidate_key}'", flush=True)
                         active_column_key = candidate_key
+                        LIVE_COLUMN_TRACKER["key"] = candidate_key
                         connection_restored = True
                         break
                 if not connection_restored:
@@ -129,7 +132,6 @@ def background_math_engine_loop():
         except Exception as e:
             print(f"[SYSTEM ENGINE] Processing error encountered inside runtime thread container: {e}", flush=True)
             
-        # ⏱️ UPDATED INTERVAL: Run loop every 30 seconds
         time.sleep(30)
 
 # Start background math engine worker thread automatically upon file inclusion
@@ -164,6 +166,8 @@ def dashboard_home():
             .status-line {{ margin-bottom: 15px; font-size: 16px; font-weight: bold; }}
             .green {{ color: #10b981; }}
             .cyan {{ color: #06b6d4; }}
+            .btn {{ display: inline-block; background-color: #2563eb; color: #ffffff; padding: 10px 20px; border-radius: 4px; text-decoration: none; font-weight: bold; margin-top: 15px; }}
+            .btn:hover {{ background-color: #1d4ed8; }}
         </style>
     </head>
     <body>
@@ -174,10 +178,17 @@ def dashboard_home():
             <div class="status-line">Target Data Pipe Interval: <span class="cyan">30 Seconds Loop</span></div>
             <hr style="border: 0; border-top: 1px solid #1f2937; margin: 20px 0;">
             <p style="font-size: 12px; color: #6b7280;">Engine continuously compiles 15 complex mathematical proofs every 30 seconds (~43,200 equations / day).</p>
+            
+            <!-- ✅ NEW: Functional interactive download button linking to the text extractor -->
+            <a href="/download" class="btn" target="_blank">📥 Download Study Log (.txt)</a>
         </div>
     </body>
     </html>
     """
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=PORT)
+# ✅ NEW: Endpoint to stream database records directly out into a Notepad download
+@app.route('/download')
+def download_logs():
+    """Queries recent items from Supabase and pipes them out into a raw text file download."""
+    endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
+    
