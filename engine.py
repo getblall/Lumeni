@@ -59,9 +59,10 @@ def generate_math_assertion():
             det = M.det()
             return f"Linear Algebra Matrix: The determinant of 2x2 matrix {M.tolist()} is equal to {det}."
         else:
-            # ✅ FIXED: Guaranteed square 2x2 upper-triangular matrix setup
+            # 2x2 identity matrix modification variant setup
             skew_val = random.randint(1, 5)
-            M = sp.Matrix([[1, skew_val], [0, 1]])
+            matrix_data = [[1, skew_val], [0, 1]]
+            M = sp.Matrix(matrix_data)
             M_inv = M.inv()
             return f"Linear Algebra Matrix: The inverse of square matrix {M.tolist()} is equal to {M_inv.tolist()}."
             
@@ -85,23 +86,7 @@ def background_math_engine_loop():
     endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
     
     active_column_key = "calculation"
-    try:
-        probe_headers = {**HEADERS, "Range": "0-0"}
-        probe_response = requests.get(endpoint, headers=probe_headers)
-        if probe_response.status_code == 200:
-            res_data = probe_response.json()
-            # ✅ FIXED: Read from list index 0 to avoid list attribute dictionary exceptions
-            if isinstance(res_data, list) and len(res_data) > 0:
-                sample_row = res_data[0]
-                for key in sample_row.keys():
-                    if key not in ['id', 'created_at', 'timestamp']:
-                        active_column_key = key
-                        LIVE_COLUMN_TRACKER["key"] = key
-                        print(f"[SYSTEM ENGINE] Auto-Discovery successful! Detected live database column: '{active_column_key}'", flush=True)
-                        break
-    except Exception as e:
-        print(f"[SYSTEM ENGINE] Auto-Discovery probe skipped, using fallback keys: {e}", flush=True)
-
+    
     while True:
         try:
             print("[SYSTEM ENGINE] Computing fresh batch of 15 mathematical assertions...", flush=True)
@@ -111,7 +96,7 @@ def background_math_engine_loop():
             response = requests.post(endpoint, headers=HEADERS, json=payload_batch)
             
             if response.status_code == 201:
-                print(f"[SYSTEM ENGINE] Batch processing successful! 15 assertions appended using key '{active_column_key}'.", flush=True)
+                print(f"[SYSTEM ENGINE] Batch processing successful! 15 assertions appended to cloud storage using key '{active_column_key}'.", flush=True)
             elif response.status_code == 400 and "PGRST204" in response.text:
                 print(f"[SYSTEM ENGINE] Schema cache mismatch. Cycling production backup column identifiers...", flush=True)
                 fallback_keys = ["Assertion", "text", "log", "math_log", "content"]
@@ -189,6 +174,22 @@ def dashboard_home():
 @app.route('/download')
 def download_logs():
     """Queries recent items from Supabase and pipes them out into a raw text file download."""
-    # ✅ FIXED: Enclosed in a complete try/except block to intercept database decoding anomalies
-    try:
-        endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
+    endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
+    params = {"order": "created_at.desc", "limit": "100"}
+    
+    response = requests.get(endpoint, headers=HEADERS, params=params)
+    records = response.json()
+    target_key = LIVE_COLUMN_TRACKER.get("key", "calculation")
+    
+    output_buffer = []
+    output_buffer.append("=========================================================================")
+    output_buffer.append("🚀 LUMENI AI COMPILATION TRACKER: ACTIVE LIVE DATA EXPORT")
+    output_buffer.append("=========================================================================")
+    output_buffer.append(f"Export Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S UTC')}\n")
+    
+    if isinstance(records, list) and len(records) > 0:
+        for index, item in enumerate(records):
+            text_content = item.get(target_key, "[Column Key Mismatch]")
+            timestamp = item.get("created_at", "Unknown Time")
+            output_buffer.append(f"[{timestamp}] - Item #{index + 1}: {text_content}")
+    else:
