@@ -60,7 +60,7 @@ def generate_math_assertion():
             return f"Linear Algebra Matrix: The determinant of 2x2 matrix {M.tolist()} is equal to {det}."
         else:
             skew_val = random.randint(1, 5)
-            M = sp.Matrix([[1, skew_val], [0, 1]])
+            M = sp.Matrix([[1, skew_val],])
             M_inv = M.inv()
             return f"Linear Algebra Matrix: The inverse of square matrix {M.tolist()} is equal to {M_inv.tolist()}."
             
@@ -90,7 +90,7 @@ def background_math_engine_loop():
         if probe_response.status_code == 200:
             res_data = probe_response.json()
             if isinstance(res_data, list) and len(res_data) > 0:
-                sample_row = res_data[0]
+                sample_row = res_data
                 for key in sample_row.keys():
                     if key not in ['id', 'created_at', 'timestamp']:
                         active_column_key = key
@@ -190,6 +190,6 @@ def download_logs():
     endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
     params = {"order": "created_at.desc", "limit": "100"}
     
-    try:
-        response = requests.get(endpoint, headers=HEADERS, params=params)
-        if response.status_code != 200:
+    # Raw execution sequence without deep try blocks to prevent compiler indentation errors
+    response = requests.get(endpoint, headers=HEADERS, params=params)
+    records = response.json()
