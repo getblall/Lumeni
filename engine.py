@@ -22,6 +22,9 @@ HEADERS = {
     "Content-Type": "application/json"
 }
 
+# ⚡ OPTIMIZATION: Pre-define global math symbols to conserve CPU cycles at 30s speeds
+X, Y = sp.symbols('x y')
+
 # -------------------------------------------------------------------------
 # 2. AUTONOMOUS MATHEMATICAL GENERATION ENGINE (SymPy Logic Container)
 # -------------------------------------------------------------------------
@@ -29,21 +32,20 @@ def generate_math_assertion():
     """Generates a single advanced mathematical proof assertion using SymPy."""
     categories = ['calculus', 'linear_algebra', 'algebra']
     chosen_cat = random.choice(categories)
-    x, y = sp.symbols('x y')
     
     if chosen_cat == 'calculus':
         sub = random.choice(['derivative', 'integral', 'limit'])
         if sub == 'derivative':
-            expr = random.choice([sp.sin(x)*sp.exp(x), x**3 - 5*x**2 + 2, sp.log(x**2 + 1)])
-            diff_expr = sp.diff(expr, x)
+            expr = random.choice([sp.sin(X)*sp.exp(X), X**3 - 5*X**2 + 2, sp.log(X**2 + 1)])
+            diff_expr = sp.diff(expr, X)
             return f"Calculus Derivative: The derivative of {expr} with respect to x is equal to {diff_expr}."
         elif sub == 'integral':
-            expr = random.choice([x**2, sp.cos(x), sp.exp(-x)])
-            int_expr = sp.integrate(expr, x)
+            expr = random.choice([X**2, sp.cos(X), sp.exp(-X)])
+            int_expr = sp.integrate(expr, X)
             return f"Calculus Integral: The indefinite integral of {expr} with respect to x is equal to {int_expr} + C."
         else:
-            expr = sp.sin(x)/x
-            lim_val = sp.limit(expr, x, 0)
+            expr = sp.sin(X)/X
+            lim_val = sp.limit(expr, X, 0)
             return f"Calculus Limit: The limit of {expr} as x approaches 0 is equal to {lim_val}."
             
     elif chosen_cat == 'linear_algebra':
@@ -54,7 +56,6 @@ def generate_math_assertion():
             det = M.det()
             return f"Linear Algebra Matrix: The determinant of 2x2 matrix {M.tolist()} is equal to {det}."
         else:
-            # 🔧 FIXED: Resolved a syntax bracket typo on the original upper-triangular matrix definition
             skew_val = random.randint(1, 5)
             M = sp.Matrix([[1, skew_val], [0, 1]])
             M_inv = M.inv()
@@ -63,18 +64,18 @@ def generate_math_assertion():
     else:
         sub = random.choice(['expand', 'roots'])
         if sub == 'expand':
-            expr = (x + random.randint(1, 5))**random.randint(2, 4)
+            expr = (X + random.randint(1, 5))**random.randint(2, 4)
             expanded = sp.expand(expr)
             return f"Algebra Expansion: Expanding the expression {expr} results structurally in {expanded}."
         else:
             a = random.randint(1, 3)
             b = random.randint(-5, 5)
-            expr = a*x + b
-            roots = sp.solve(expr, x)
+            expr = a*X + b
+            roots = sp.solve(expr, X)
             return f"Algebra Roots: The real roots solved for the equation {expr} = 0 evaluate to {roots}."
 
 def background_math_engine_loop():
-    """Compiles batches of 15 advanced mathematical assertions every 45 seconds."""
+    """Compiles batches of 15 advanced mathematical assertions every 30 seconds."""
     time.sleep(2.0)
     print("[SYSTEM ENGINE] Autonomous SymPy computational engine loop started successfully.", flush=True)
     endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
@@ -99,7 +100,7 @@ def background_math_engine_loop():
         try:
             print("[SYSTEM ENGINE] Computing fresh batch of 15 mathematical assertions...", flush=True)
             
-            # 🚀 FIXED: Isolate raw generated strings completely from database dictionary states to prevent loops from crashing
+            # Isolate raw generated strings completely from database dictionary mutation traps
             raw_math_strings = [generate_math_assertion() for _ in range(15)]
             
             payload_batch = [{active_column_key: string} for string in raw_math_strings]
@@ -113,7 +114,6 @@ def background_math_engine_loop():
                 
                 connection_restored = False
                 for candidate_key in fallback_keys:
-                    # ✅ FIXED: Securely map data structures over clean text keys instead of mutating active loops
                     retry_batch = [{candidate_key: string} for string in raw_math_strings]
                     retry_response = requests.post(endpoint, headers=HEADERS, json=retry_batch)
                     if retry_response.status_code == 201:
@@ -129,8 +129,8 @@ def background_math_engine_loop():
         except Exception as e:
             print(f"[SYSTEM ENGINE] Processing error encountered inside runtime thread container: {e}", flush=True)
             
-        # ⏱️ UPDATED INTERVAL: Run loop every 45 seconds
-        time.sleep(45)
+        # ⏱️ UPDATED INTERVAL: Run loop every 30 seconds
+        time.sleep(30)
 
 # Start background math engine worker thread automatically upon file inclusion
 engine_thread = threading.Thread(target=background_math_engine_loop, daemon=True)
@@ -171,9 +171,9 @@ def dashboard_home():
             <h2>🚀 Lumeni AI Project Cluster</h2>
             <div class="status-line">Engine State: <span class="green">RUNNING (Thread-0)</span></div>
             <div class="status-line">Compiled Knowledge Assertions: <span class="cyan">{total_assertions} records</span></div>
-            <div class="status-line">Target Data Pipe Interval: <span class="cyan">45 Seconds Loop</span></div>
+            <div class="status-line">Target Data Pipe Interval: <span class="cyan">30 Seconds Loop</span></div>
             <hr style="border: 0; border-top: 1px solid #1f2937; margin: 20px 0;">
-            <p style="font-size: 12px; color: #6b7280;">Engine continuously compiles 15 complex mathematical proofs every 45 seconds (~28,800 equations / day).</p>
+            <p style="font-size: 12px; color: #6b7280;">Engine continuously compiles 15 complex mathematical proofs every 30 seconds (~43,200 equations / day).</p>
         </div>
     </body>
     </html>
@@ -181,4 +181,3 @@ def dashboard_home():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=PORT)
-
