@@ -26,7 +26,7 @@ HEADERS = {
 X, Y = sp.symbols('x y')
 
 # Global variable to cache the live discovered column safely across threads
-LIVE_COLUMN_TRACKER = {"key": "assertion"}
+LIVE_COLUMN_TRACKER = {"key": "calculation"}
 
 # -------------------------------------------------------------------------
 # 2. AUTONOMOUS MATHEMATICAL GENERATION ENGINE (SymPy Logic Container)
@@ -59,7 +59,7 @@ def generate_math_assertion():
             det = M.det()
             return f"Linear Algebra Matrix: The determinant of 2x2 matrix {M.tolist()} is equal to {det}."
         else:
-            # ✅ FIXED: Corrected matrix nesting to be a true square 2x2 matrix so it is invertible
+            # ✅ FIXED: Guaranteed square 2x2 upper-triangular matrix setup
             skew_val = random.randint(1, 5)
             M = sp.Matrix([[1, skew_val], [0, 1]])
             M_inv = M.inv()
@@ -84,13 +84,13 @@ def background_math_engine_loop():
     print("[SYSTEM ENGINE] Autonomous SymPy computational engine loop started successfully.", flush=True)
     endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
     
-    active_column_key = "assertion"
+    active_column_key = "calculation"
     try:
         probe_headers = {**HEADERS, "Range": "0-0"}
         probe_response = requests.get(endpoint, headers=probe_headers)
         if probe_response.status_code == 200:
             res_data = probe_response.json()
-            # ✅ FIXED: Corrected entry target row dictionary extraction
+            # ✅ FIXED: Read from list index 0 to avoid list attribute dictionary exceptions
             if isinstance(res_data, list) and len(res_data) > 0:
                 sample_row = res_data[0]
                 for key in sample_row.keys():
@@ -111,7 +111,7 @@ def background_math_engine_loop():
             response = requests.post(endpoint, headers=HEADERS, json=payload_batch)
             
             if response.status_code == 201:
-                print(f"[SYSTEM ENGINE] Batch processing successful! 15 assertions appended to cloud storage using key '{active_column_key}'.", flush=True)
+                print(f"[SYSTEM ENGINE] Batch processing successful! 15 assertions appended using key '{active_column_key}'.", flush=True)
             elif response.status_code == 400 and "PGRST204" in response.text:
                 print(f"[SYSTEM ENGINE] Schema cache mismatch. Cycling production backup column identifiers...", flush=True)
                 fallback_keys = ["Assertion", "text", "log", "math_log", "content"]
@@ -189,6 +189,6 @@ def dashboard_home():
 @app.route('/download')
 def download_logs():
     """Queries recent items from Supabase and pipes them out into a raw text file download."""
-    endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
-    params = {"order": "created_at.desc", "limit": "100"}
-    
+    # ✅ FIXED: Enclosed in a complete try/except block to intercept database decoding anomalies
+    try:
+        endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
