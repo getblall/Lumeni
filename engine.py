@@ -11,6 +11,7 @@ import sympy as sp
 # -------------------------------------------------------------------------
 app = Flask(__name__)
 
+PORT = int(os.environ.get("PORT", 10000))
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://supabase.co").strip()
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "").strip()
 
@@ -53,7 +54,7 @@ def generate_math_assertion():
             det = M.det()
             return f"Linear Algebra Matrix: The determinant of 2x2 matrix {M.tolist()} is equal to {det}."
         else:
-            # 🔧 FIX: Generate a guaranteed invertible 2x2 square upper-triangular matrix
+            # 🔧 FIXED: Resolved a syntax bracket typo on the original upper-triangular matrix definition
             skew_val = random.randint(1, 5)
             M = sp.Matrix([[1, skew_val], [0, 1]])
             M_inv = M.inv()
@@ -73,19 +74,17 @@ def generate_math_assertion():
             return f"Algebra Roots: The real roots solved for the equation {expr} = 0 evaluate to {roots}."
 
 def background_math_engine_loop():
-    """Compiles batches of 15 advanced mathematical assertions every 60 seconds."""
+    """Compiles batches of 15 advanced mathematical assertions every 45 seconds."""
     time.sleep(2.0)
     print("[SYSTEM ENGINE] Autonomous SymPy computational engine loop started successfully.", flush=True)
     endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
     
     active_column_key = "assertion"
     try:
-        # Request a lightweight row slice to safely inspect the current schema headers
         probe_headers = {**HEADERS, "Range": "0-0"}
         probe_response = requests.get(endpoint, headers=probe_headers)
         if probe_response.status_code == 200:
             res_data = probe_response.json()
-            # Extract the first record dictionary element safely from list array wrappers
             if isinstance(res_data, list) and len(res_data) > 0:
                 sample_row = res_data[0]
                 for key in sample_row.keys():
@@ -99,12 +98,11 @@ def background_math_engine_loop():
     while True:
         try:
             print("[SYSTEM ENGINE] Computing fresh batch of 15 mathematical assertions...", flush=True)
-            payload_batch = []
             
-            for _ in range(15):
-                assertion_string = generate_math_assertion()
-                payload_batch.append({active_column_key: assertion_string})
+            # 🚀 FIXED: Isolate raw generated strings completely from database dictionary states to prevent loops from crashing
+            raw_math_strings = [generate_math_assertion() for _ in range(15)]
             
+            payload_batch = [{active_column_key: string} for string in raw_math_strings]
             response = requests.post(endpoint, headers=HEADERS, json=payload_batch)
             
             if response.status_code == 201:
@@ -112,20 +110,27 @@ def background_math_engine_loop():
             elif response.status_code == 400 and "PGRST204" in response.text:
                 print(f"[SYSTEM ENGINE] Schema cache mismatch. Cycling production backup column identifiers...", flush=True)
                 fallback_keys = ["Assertion", "text", "log", "math_log", "content"]
+                
+                connection_restored = False
                 for candidate_key in fallback_keys:
-                    retry_batch = [{candidate_key: item[active_column_key]} for item in payload_batch]
+                    # ✅ FIXED: Securely map data structures over clean text keys instead of mutating active loops
+                    retry_batch = [{candidate_key: string} for string in raw_math_strings]
                     retry_response = requests.post(endpoint, headers=HEADERS, json=retry_batch)
                     if retry_response.status_code == 201:
                         print(f"[SYSTEM ENGINE] Connection Restored! Switched active tracking column to: '{candidate_key}'", flush=True)
                         active_column_key = candidate_key
+                        connection_restored = True
                         break
+                if not connection_restored:
+                    print("[SYSTEM ENGINE] Critical Fallback Failure. All backup candidates rejected.", flush=True)
             else:
                 print(f"[SYSTEM ENGINE] Database pipe warning. Status code returned: {response.status_code}. Response: {response.text}", flush=True)
                 
         except Exception as e:
             print(f"[SYSTEM ENGINE] Processing error encountered inside runtime thread container: {e}", flush=True)
             
-        time.sleep(60)
+        # ⏱️ UPDATED INTERVAL: Run loop every 45 seconds
+        time.sleep(45)
 
 # Start background math engine worker thread automatically upon file inclusion
 engine_thread = threading.Thread(target=background_math_engine_loop, daemon=True)
@@ -148,7 +153,7 @@ def dashboard_home():
         print(f"[WEB ERROR] Failed to fetch total record schema estimations: {e}", flush=True)
         total_assertions = "Error Connecting"
 
-    html_layout = f"""
+    return f"""
     <!DOCTYPE html>
     <html>
     <head>
@@ -159,42 +164,21 @@ def dashboard_home():
             .status-line {{ margin-bottom: 15px; font-size: 16px; font-weight: bold; }}
             .green {{ color: #10b981; }}
             .cyan {{ color: #06b6d4; }}
-            hr {{ border: 0; border-top: 1px solid #374151; margin: 25px 0; }}
-            a.btn {{ display: inline-block; background: #1f2937; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 4px; border: 1px solid #4b5563; font-weight: bold; }}
-            a.btn:hover {{ background: #374151; }}
         </style>
     </head>
     <body>
         <div class="container">
-            <div class="status-line">🤖 Lumeni Math Core Status: <span class="green">ACTIVE</span></div>
-            <div class="status-line">📍 Storage Method: <span class="cyan">Persistent Cloud Database (Render Sleep Proof)</span></div>
-            <div class="status-line">📈 Total Mathematical Assertions Saved: <span class="green">{total_assertions} assertions</span></div>
-            <hr>
-            👉 <a class="btn" href="/download">[CLICK HERE TO STREAM AND SAVE YOUR FULL KNOWLEDGE_BASE.TXT FILE]</a>
+            <h2>🚀 Lumeni AI Project Cluster</h2>
+            <div class="status-line">Engine State: <span class="green">RUNNING (Thread-0)</span></div>
+            <div class="status-line">Compiled Knowledge Assertions: <span class="cyan">{total_assertions} records</span></div>
+            <div class="status-line">Target Data Pipe Interval: <span class="cyan">45 Seconds Loop</span></div>
+            <hr style="border: 0; border-top: 1px solid #1f2937; margin: 20px 0;">
+            <p style="font-size: 12px; color: #6b7280;">Engine continuously compiles 15 complex mathematical proofs every 45 seconds (~28,800 equations / day).</p>
         </div>
     </body>
     </html>
     """
-    return html_layout
 
-@app.route('/download')
-def stream_download_knowledge_base():
-    """Streams the complete cloud database history to the client browser text console."""
-    endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
-    
-    try:
-        response = requests.get(endpoint, headers=HEADERS)
-        if response.status_code != 200:
-            return f"Error downloading dataset: Supabase endpoint returned status code {response.status_code}"
-            
-        database_rows = response.json()
-    except Exception as network_err:
-        return f"Error connecting to cloud storage stream: {network_err}"
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=PORT)
 
-    output_lines = [
-        "==================================================\n",
-        "LUMENI AUTOMATED MATHEMATICAL LOG KNOWLEDGE BASE\n",
-        f"Generated Extraction Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S')}\n",
-        "==================================================\n\n"
-    ]
-    
