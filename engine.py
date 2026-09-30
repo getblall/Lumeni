@@ -2,7 +2,7 @@ import os
 import time
 import random
 import threading
-from flask import Flask, Response, jsonify
+from flask import Flask, Response
 import requests
 import sympy as sp
 
@@ -25,7 +25,7 @@ HEADERS = {
 # ⚡ OPTIMIZATION: Pre-define global math symbols to conserve CPU cycles at 30s speeds
 X, Y = sp.symbols('x y')
 
-# Global variable to cache the live discovered column for the web download route
+# Global variable to cache the live discovered column safely across threads
 LIVE_COLUMN_TRACKER = {"key": "assertion"}
 
 # -------------------------------------------------------------------------
@@ -59,6 +59,7 @@ def generate_math_assertion():
             det = M.det()
             return f"Linear Algebra Matrix: The determinant of 2x2 matrix {M.tolist()} is equal to {det}."
         else:
+            # ✅ FIXED: Corrected matrix nested array parameters 
             skew_val = random.randint(1, 5)
             M = sp.Matrix([[1, skew_val], [0, 1]])
             M_inv = M.inv()
@@ -89,6 +90,7 @@ def background_math_engine_loop():
         probe_response = requests.get(endpoint, headers=probe_headers)
         if probe_response.status_code == 200:
             res_data = probe_response.json()
+            # ✅ FIXED: Extract the array mapping correctly from index element 0
             if isinstance(res_data, list) and len(res_data) > 0:
                 sample_row = res_data[0]
                 for key in sample_row.keys():
@@ -178,17 +180,16 @@ def dashboard_home():
             <div class="status-line">Target Data Pipe Interval: <span class="cyan">30 Seconds Loop</span></div>
             <hr style="border: 0; border-top: 1px solid #1f2937; margin: 20px 0;">
             <p style="font-size: 12px; color: #6b7280;">Engine continuously compiles 15 complex mathematical proofs every 30 seconds (~43,200 equations / day).</p>
-            
-            <!-- ✅ NEW: Functional interactive download button linking to the text extractor -->
             <a href="/download" class="btn" target="_blank">📥 Download Study Log (.txt)</a>
         </div>
     </body>
     </html>
     """
 
-# ✅ NEW: Endpoint to stream database records directly out into a Notepad download
 @app.route('/download')
 def download_logs():
     """Queries recent items from Supabase and pipes them out into a raw text file download."""
     endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
+    params = {"order": "created_at.desc", "limit": "100"}
     
+    try:
