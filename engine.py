@@ -22,7 +22,7 @@ HEADERS = {
     "Content-Type": "application/json"
 }
 
-# ⚡ OPTIMIZATION: Pre-define global math symbols to conserve CPU cycles at 30s speeds
+# Pre-define global math symbols to conserve CPU cycles at 30s speeds
 X, Y = sp.symbols('x y')
 
 # Global variable to cache the live discovered column safely across threads
@@ -190,7 +190,6 @@ def download_logs():
     endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
     params = {"order": "created_at.desc", "limit": "100"}
     
-    # ✅ FIXED: Enforced structured indentation inside this try block container
     try:
         response = requests.get(endpoint, headers=HEADERS, params=params)
         if response.status_code != 200:
