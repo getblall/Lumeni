@@ -55,6 +55,7 @@ def generate_math_assertion():
             M = sp.Matrix([[a, b], [c, d]])
             return f"Linear Algebra Matrix: The determinant of 2x2 matrix {M.tolist()} is equal to {M.det()}."
         else:
+            # Stable 2x2 matrix formulation helper
             skew_val = random.randint(1, 5)
             M = sp.Matrix([[1, skew_val], [0, 1]])
             return f"Linear Algebra Matrix: The inverse of square matrix {M.tolist()} is equal to {M.inv().tolist()}."
@@ -182,12 +183,13 @@ def download_logs():
             end_row = start_row + chunk_size - 1
             chunk_headers = {**HEADERS, "Range": f"{start_row}-{end_row}"}
             
-            try:
-                res = requests.get(endpoint, headers=chunk_headers, params={"order": "created_at.desc"})
+            res = requests.get(endpoint, headers=chunk_headers, params={"order": "created_at.desc"})
+            
+            if res.status_code != 200 and res.status_code != 206:
+                yield f"[STREAM ERROR] Connection halted with status code {res.status_code}\n"
+                break
                 
-                # ✅ FIXED: Corrected syntax verification checks
-                if res.status_code != 200 and res.status_code != 206:
-                    yield f"[STREAM ERROR] Connection halted with status code {res.status_code}\n"
-                    break
-                    
-                records = res.json()
+            records = res.json()
+            if not isinstance(records, list) or len(records) == 0:
+                has_more = False
+                break
