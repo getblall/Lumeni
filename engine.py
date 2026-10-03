@@ -2,7 +2,7 @@ import os
 import time
 import random
 import threading
-from flask import Flask, Response
+from flask import Flask, Response, stream_with_context
 import requests
 import sympy as sp
 
@@ -15,13 +15,17 @@ PORT = int(os.environ.get("PORT", 10000))
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://supabase.co").strip()
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "").strip()
 
+# Construct headers for standard PostgREST interactions
 HEADERS = {
     "ApiKey": SUPABASE_KEY,
     "Authorization": f"Bearer {SUPABASE_KEY}",
     "Content-Type": "application/json"
 }
 
+# ⚡ OPTIMIZATION: Pre-define global math symbols to conserve CPU cycles at 30s speeds
 X, Y = sp.symbols('x y')
+
+# Global variable to cache the live discovered column safely across threads
 LIVE_COLUMN_TRACKER = {"key": "calculation"}
 
 # -------------------------------------------------------------------------
@@ -51,6 +55,7 @@ def generate_math_assertion():
             M = sp.Matrix([[a, b], [c, d]])
             return f"Linear Algebra Matrix: The determinant of 2x2 matrix {M.tolist()} is equal to {M.det()}."
         else:
+            # ✅ STABLE MATRIX SETUP: True invertible 2x2 square upper-triangular matrix
             skew_val = random.randint(1, 5)
             M = sp.Matrix([[1, skew_val], [0, 1]])
             return f"Linear Algebra Matrix: The inverse of square matrix {M.tolist()} is equal to {M.inv().tolist()}."
@@ -67,23 +72,15 @@ def generate_math_assertion():
             return f"Algebra Roots: The real roots solved for the equation {expr} = 0 evaluate to {sp.solve(expr, X)}."
 
 def background_math_engine_loop():
-    """Compiles batches of 15 assertions every 30 seconds and checks cache limits."""
+    """Compiles batches of 15 advanced mathematical assertions every 30 seconds."""
     time.sleep(2.0)
+    print("[SYSTEM ENGINE] Autonomous SymPy computational engine loop started successfully.", flush=True)
     endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
+    
     active_column_key = "calculation"
     
     while True:
         try:
-            # 🧼 AUTOMATIC WIPE MIGRATOR: If records build up, safely clean them to keep everything fast
-            count_res = requests.get(endpoint, headers={**HEADERS, "Prefer": "count=exact", "Range": "0-0"})
-            content_range = count_res.headers.get("Content-Range", "")
-            total = int(content_range.split("/")[-1]) if "/" in content_range else 0
-            
-            # If database table holds more than 5,000 equations, wipe it to reclaim high speeds
-            if total > 5000:
-                print(f"[MEMORY WIPE] Clearing data table cache scale ({total} items cleared safely)...", flush=True)
-                requests.delete(f"{endpoint}?id=gt.0", headers=HEADERS)
-
             print("[SYSTEM ENGINE] Computing fresh batch of 15 mathematical assertions...", flush=True)
             raw_math_strings = [generate_math_assertion() for _ in range(15)]
             
@@ -91,37 +88,51 @@ def background_math_engine_loop():
             response = requests.post(endpoint, headers=HEADERS, json=payload_batch)
             
             if response.status_code == 201:
-                print(f"[SYSTEM ENGINE] Batch processing successful using key '{active_column_key}'.", flush=True)
+                print(f"[SYSTEM ENGINE] Batch processing successful! 15 assertions appended to cloud storage using key '{active_column_key}'.", flush=True)
             elif response.status_code == 400 and "PGRST204" in response.text:
+                print(f"[SYSTEM ENGINE] Schema cache mismatch. Cycling production backup column identifiers...", flush=True)
                 fallback_keys = ["Assertion", "text", "log", "math_log", "content"]
+                
+                connection_restored = False
                 for candidate_key in fallback_keys:
                     retry_batch = [{candidate_key: string} for string in raw_math_strings]
                     retry_response = requests.post(endpoint, headers=HEADERS, json=retry_batch)
                     if retry_response.status_code == 201:
+                        print(f"[SYSTEM ENGINE] Connection Restored! Switched active tracking column to: '{candidate_key}'", flush=True)
                         active_column_key = candidate_key
                         LIVE_COLUMN_TRACKER["key"] = candidate_key
+                        connection_restored = True
                         break
+                if not connection_restored:
+                    print("[SYSTEM ENGINE] Critical Fallback Failure. All backup candidates rejected.", flush=True)
+            else:
+                print(f"[SYSTEM ENGINE] Database pipe warning. Status code returned: {response.status_code}. Response: {response.text}", flush=True)
+                
         except Exception as e:
-            print(f"[SYSTEM ENGINE] Operational exception: {e}", flush=True)
+            print(f"[SYSTEM ENGINE] Processing error encountered inside runtime thread container: {e}", flush=True)
             
         time.sleep(30)
 
+# Start background math engine worker thread automatically upon file inclusion
 engine_thread = threading.Thread(target=background_math_engine_loop, daemon=True)
 engine_thread.start()
 
 # -------------------------------------------------------------------------
-# 3. WEB DASHBOARD PLATFORM ROUTES
+# 3. WEB DASHBOARD PLATFORM ROUTES (Render Sleep Proof)
 # -------------------------------------------------------------------------
 @app.route('/')
 def dashboard_home():
+    """Queries public headers to present global state metrics on the live screen."""
     endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
     count_headers = {**HEADERS, "Prefer": "count=exact", "Range": "0-0"}
+    
     try:
         response = requests.get(endpoint, headers=count_headers)
         content_range = response.headers.get("Content-Range", "")
         total_assertions = content_range.split("/")[-1] if "/" in content_range else "Unknown"
     except Exception as e:
-        total_assertions = "Sync Error"
+        print(f"[WEB ERROR] Failed to fetch total record schema estimations: {e}", flush=True)
+        total_assertions = "Error Connecting"
 
     return f"""
     <!DOCTYPE html>
@@ -142,11 +153,11 @@ def dashboard_home():
         <div class="container">
             <h2>🚀 Lumeni AI Project Cluster</h2>
             <div class="status-line">Engine State: <span class="green">RUNNING (Thread-0)</span></div>
-            <div class="status-line">Active Live Cache Assertions: <span class="cyan">{total_assertions} records</span></div>
-            <div class="status-line">Target Performance Mode: <span class="cyan">Auto-Purge Enabled</span></div>
+            <div class="status-line">Compiled Knowledge Assertions: <span class="cyan">{total_assertions} records</span></div>
+            <div class="status-line">Target Data Pipe Interval: <span class="cyan">30 Seconds Loop</span></div>
             <hr style="border: 0; border-top: 1px solid #1f2937; margin: 20px 0;">
-            <p style="font-size: 12px; color: #6b7280;">Engine compiles data loops every 30 seconds. To maintain extreme speeds, live cache clears periodically into archives.</p>
-            <a href="/download" class="btn" target="_blank">📥 Download Active Study Log (.txt)</a>
+            <p style="font-size: 12px; color: #6b7280;">Engine continuously compiles 15 complex mathematical proofs every 30 seconds (~43,200 equations / day).</p>
+            <a href="/download" class="btn" target="_blank">📥 Stream Active Study Log (.txt)</a>
         </div>
     </body>
     </html>
@@ -154,32 +165,29 @@ def dashboard_home():
 
 @app.route('/download')
 def download_logs():
-    """Dynamically streams chunks of logs to prevent memory exhaustion crashes."""
-    endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
-    params = {"order": "created_at.desc", "limit": "300"}
-    
-    response = requests.get(endpoint, headers=HEADERS, params=params)
-    records = response.json()
-    target_key = LIVE_COLUMN_TRACKER.get("key", "calculation")
-    
-    output = [
-        "=========================================================================",
-        "🚀 LUMENI AI COMPILATION TRACKER: PERFORMANCE LIVE STREAM EXPORT",
-        "=========================================================================",
-        f"Export Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S UTC')}\n"
-    ]
-    
-    if isinstance(records, list) and len(records) > 0:
-        for idx, item in enumerate(records):
-            output.append(f"[{item.get('created_at', 'Time Unknown')}] Item #{idx+1}: {item.get(target_key, '[Missing Value]')}")
-    else:
-        output.append("Live cache is currently empty following a scheduled auto-wipe loop cycle.")
+    """✅ PERFORMANCE LEVEL UP: Streams chunks iteratively over HTTP to prevent memory exhaustion crashes."""
+    def generate_chunks():
+        endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
+        target_key = LIVE_COLUMN_TRACKER.get("key", "calculation")
         
-    return Response(
-        "\n".join(output),
-        mimetype="text/plain",
-        headers={"Content-Disposition": "attachment;filename=lumeni_live_log.txt"}
-    )
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=PORT)
+        yield "=========================================================================\n"
+        yield "🚀 LUMENI AI COMPILATION TRACKER: HIGH-VOLUME ITERATOR DATA STREAM\n"
+        yield "=========================================================================\n"
+        yield f"Export Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S UTC')}\n\n"
+        
+        chunk_size = 1000
+        start_row = 0
+        has_more = True
+        global_index = 1
+        
+        while has_more:
+            end_row = start_row + chunk_size - 1
+            chunk_headers = {**HEADERS, "Range": f"{start_row}-{end_row}"}
+            
+            try:
+                res = requests.get(endpoint, headers=chunk_headers, params={"order": "created_at.desc"})
+                if res.status_code not in:
+                    yield f"[STREAM ERROR] Connection halted with status code {res.status_code}\n"
+                    break
+                    
+                records = res.json()
