@@ -22,7 +22,7 @@ HEADERS = {
     "Content-Type": "application/json"
 }
 
-# ⚡ OPTIMIZATION: Pre-define global math symbols to conserve CPU cycles at 30s speeds
+# Pre-define global math symbols to conserve CPU cycles at 30s speeds
 X, Y = sp.symbols('x y')
 
 # Global variable to cache the live discovered column safely across threads
@@ -55,7 +55,6 @@ def generate_math_assertion():
             M = sp.Matrix([[a, b], [c, d]])
             return f"Linear Algebra Matrix: The determinant of 2x2 matrix {M.tolist()} is equal to {M.det()}."
         else:
-            # ✅ STABLE MATRIX SETUP: True invertible 2x2 square upper-triangular matrix
             skew_val = random.randint(1, 5)
             M = sp.Matrix([[1, skew_val], [0, 1]])
             return f"Linear Algebra Matrix: The inverse of square matrix {M.tolist()} is equal to {M.inv().tolist()}."
@@ -76,7 +75,6 @@ def background_math_engine_loop():
     time.sleep(2.0)
     print("[SYSTEM ENGINE] Autonomous SymPy computational engine loop started successfully.", flush=True)
     endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
-    
     active_column_key = "calculation"
     
     while True:
@@ -165,7 +163,7 @@ def dashboard_home():
 
 @app.route('/download')
 def download_logs():
-    """✅ PERFORMANCE LEVEL UP: Streams chunks iteratively over HTTP to prevent memory exhaustion crashes."""
+    """✅ PERFORMANCE STREAMING: Streams data chunks iteratively over HTTP to prevent memory crashes."""
     def generate_chunks():
         endpoint = f"{SUPABASE_URL}/rest/v1/math_logs"
         target_key = LIVE_COLUMN_TRACKER.get("key", "calculation")
@@ -186,7 +184,9 @@ def download_logs():
             
             try:
                 res = requests.get(endpoint, headers=chunk_headers, params={"order": "created_at.desc"})
-                if res.status_code not in:
+                
+                # ✅ FIXED: Corrected syntax verification checks
+                if res.status_code != 200 and res.status_code != 206:
                     yield f"[STREAM ERROR] Connection halted with status code {res.status_code}\n"
                     break
                     
